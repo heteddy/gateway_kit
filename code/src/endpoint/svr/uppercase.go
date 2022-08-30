@@ -8,7 +8,8 @@ package svr
 import (
 	"context"
 	"encoding/json"
-	"gateway_kit/service/svr"
+	"gateway_kit/svc"
+	"gateway_kit/svc/uppercase"
 	"gateway_kit/util"
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -29,20 +30,21 @@ type UppercaseResponse struct {
 // @Description: 这里是每个controller
 // @param uppercase
 // @return endpoint.Endpoint
-func MakeUpperCaseEndpoint(uppercase svr.StringService) endpoint.Endpoint {
+func MakeUpperCaseEndpoint(uppercase svc.Upper) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(*UppercaseRequest)
 		return uppercase.Uppercase(ctx, req.S)
 	}
 }
 
-func AddRoute(r *mux.Router, options ...httptransport.ServerOption) {
+func AddStringRoute(r *mux.Router, options ...httptransport.ServerOption) {
 	v1 := r.PathPrefix("/api/v1/").Subrouter()
 	v1.Methods(http.MethodPost).Path("/strings").Handler(
+		// 这里可以继承这种server，然后通过自定义的route
 		httptransport.NewServer(
-			MakeUpperCaseEndpoint(svr.NewStringSvc()),
+			MakeUpperCaseEndpoint(uppercase.NewStringService()),
 			decodeStringReq,
-			util.EncodeResp,
+			util.EncodeHttpResp,
 			options...,
 		),
 	)

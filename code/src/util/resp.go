@@ -15,7 +15,7 @@ const (
 	ContentType = "application/json;charset=utf-8"
 )
 
-func EncodeResp(_ context.Context, w http.ResponseWriter, response interface{}) error {
+func EncodeHttpResp(_ context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", ContentType)
 	encoder := json.NewEncoder(w)
 	if err := encoder.Encode(response); err != nil {

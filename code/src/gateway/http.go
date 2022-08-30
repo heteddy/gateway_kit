@@ -1,15 +1,15 @@
 // @Author : detaohe
-// @File   : reverse.go
+// @File   : http.go
 // @Description:
 // @Date   : 2022/4/23 8:31 PM
 
-package http
+package gateway
 
 import (
 	"bytes"
 	"compress/gzip"
-	"gateway_kit/service"
-	"gateway_kit/util"
+	"gateway_kit/lb"
+	"gateway_kit/svc"
 	"io/ioutil"
 	"log"
 	"net"
@@ -38,12 +38,12 @@ var transport = &http.Transport{
 //		log.Println(err1)
 //		return
 //	}
-//	p := NewReverseProxy([]*url.URL{url1})
+//	p := NewHttpReverseProxy([]*url.URL{url1})
 //
 //	log.Fatalln(http.ListenAndServe(":9079", p))
 //}
 
-func NewReverseProxy(l service.LoadBalance) *httputil.ReverseProxy {
+func NewHttpReverseProxy(repo *svc.Repo, l lb.LoadBalancer) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			// 随机选择一个url
@@ -54,21 +54,29 @@ func NewReverseProxy(l service.LoadBalance) *httputil.ReverseProxy {
 			//host := urls[idx]
 			// /api-gateway/server2
 			re, _ := regexp.Compile("^/api-gateway/(.*)")
-			tmpPath := re.ReplaceAllString(req.URL.Path, "$1")
+			urlPath := re.ReplaceAllString(req.URL.Path, "$1")
+			svcName := ServiceName(urlPath)
 			// 是否修改host
-			log.Println("req url=", req.URL.Path)
-			if strings.Contains(req.URL.Path, "server3") {
-				req.URL.Host = "192.168.64.7:9193"
-				req.URL.Path = util.JoinUrl("/api/v1", tmpPath)
-			} else {
-				req.URL.Host = "192.168.64.6:9192"
-				req.URL.Path = util.JoinUrl("/api/v1", tmpPath)
-			}
+			hosts, err := repo.GetServices(svcName)
+			log.Printf("servicename=%s,hosts=%v \n", svcName, hosts)
+			if err != nil {
 
+			} else {
+				host, err := l.GetService(hosts)
+				log.Printf("loadbalance host=%s, error=%v\n", host, err)
+				if err != nil {
+
+				} else {
+					req.URL.Host = host
+					// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
+					req.URL.Path = PathJoin("", urlPath)
+				}
+			}
 			// 是否修改scheme
 			req.URL.Scheme = "http"
 			//log.Println("url:", host)
 			if _, ok := req.Header["User-Agent"]; !ok {
+				// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header
 				req.Header.Set("User-Agent", "teddy-api-gateway")
 			}
 		},
@@ -95,22 +103,47 @@ func NewReverseProxy(l service.LoadBalance) *httputil.ReverseProxy {
 			if readErr != nil {
 				return readErr
 			}
-
 			//note api gateway的功能，错误码统一处理，异常请求时设置StatusCode
 			if resp.StatusCode != 200 {
 				payload = []byte("StatusCode error:" + string(payload))
 			}
-
 			//todo 因为预读了数据所以内容重新回写
-			payload2 := []byte(string(payload) + " from api gateway")
+			payload2 := []byte(string(payload) + " from api gateway\n")
 			resp.Body = ioutil.NopCloser(bytes.NewBuffer(payload2))
 			resp.ContentLength = int64(len(payload2))
 			resp.Header.Set("Content-Length", strconv.FormatInt(int64(len(payload2)), 10))
 			return nil
 		},
 		ErrorHandler: func(writer http.ResponseWriter, request *http.Request, err error) {
-
 			http.Error(writer, "ErrorHandler error:"+err.Error(), 500)
 		},
 	}
+}
+
+func ServiceName(path string) string {
+	idx := strings.Index(path, "/")
+	switch {
+	case idx > 0:
+		return path[:idx]
+	case idx == 0:
+		idx := strings.Index(path[1:], "/")
+		return path[:idx]
+	case idx < 0:
+		return path
+	default:
+		return path
+	}
+}
+
+func PathJoin(a string, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+	//log.Printf(" a=%s,b=%s,a+b=%s \n", a, b, a+b)
+	return a + b
 }

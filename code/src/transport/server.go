@@ -17,10 +17,13 @@ import (
 //
 func MakeHttpHandler() http.Handler {
 	router := mux.NewRouter()
-	svr.AddRoute(router)
-	router.Methods(http.MethodGet).Path("/healthz").HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		writer.Write([]byte("ok"))
-	})
+	svr.AddStringRoute(router)
+	//svr.AddStringRoute(router)
+
+	router.Methods(http.MethodGet).Path("/healthz").HandlerFunc(
+		func(writer http.ResponseWriter, request *http.Request) {
+			writer.WriteHeader(http.StatusOK)
+			writer.Write([]byte("ok"))
+		})
 	return router
 }
