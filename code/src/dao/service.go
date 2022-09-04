@@ -5,7 +5,17 @@
 
 package dao
 
-type Client struct {
-	ID   string `json:"id" bson:"_id"`
-	Name string `json:"name" bson:"name"`
+import "time"
+
+type ServiceEntity struct {
+	ID          string `json:"id" bson:"_id"`
+	Type        string `json:"type" bson:"type"` // grpc http tcp 等
+	Name        string `json:"name" bson:"name"`
+	Description string `json:"description" bson:"description"`
+	Deleted     string `json:"deleted" bson:"deleted"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}
+
+type ServiceDao struct {
 }

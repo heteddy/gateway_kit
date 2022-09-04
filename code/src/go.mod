@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/go-kit/kit v0.12.0
 	github.com/gorilla/mux v1.8.0
+	github.com/lukesampson/figlet v0.0.0-20190211215653-8a3ef4a6ac42
 	go.mongodb.org/mongo-driver v1.9.0
 )
 

@@ -7,7 +7,7 @@ package util
 
 import "strings"
 
-func JoinUrl(a, b string) string {
+func JoinPath(a, b string) string {
 	suffixA := strings.HasSuffix(a, "/")
 	suffixB := strings.HasPrefix(b, "/")
 	switch {
@@ -16,6 +16,5 @@ func JoinUrl(a, b string) string {
 	case !suffixA && !suffixB:
 		return a + "/" + b
 	}
-	//log.Printf("singleJoiningSlash a=%s,b=%s,a+b=%s \n", a, b, a+b)
 	return a + b
 }

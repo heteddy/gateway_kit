@@ -64,7 +64,7 @@ func New(config MongoConfig, opts ...*options.ClientOptions) (*MongoClient, erro
 	if err2 != nil {
 		log.Println("error of collections", err)
 	} else {
-		log.Println(collectionNames)
+		log.Println("collection names=", collectionNames)
 	}
 	mongoClient := &MongoClient{
 		config:   &config,
