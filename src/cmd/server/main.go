@@ -93,7 +93,7 @@ func startServer() {
 	go svc.Interrupt(errC)
 	handler := transport.MakeHttpHandler()
 	svr := &http.Server{
-		Addr:           ":" + config.All.Http.Port,
+		Addr:           ":" + config.All.Server.HttpPort,
 		Handler:        handler,
 		MaxHeaderBytes: 1 << 25,
 	}

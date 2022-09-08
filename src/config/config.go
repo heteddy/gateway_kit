@@ -24,7 +24,6 @@ var (
 type Configure struct {
 	Service string
 	Mode    string // release debug
-	Timeout int
 	Version string
 	Server  struct {
 		HttpPort string
@@ -59,6 +58,8 @@ func InitConfigure(configureFile, logPath string) error {
 		log.Fatalf("Failed to Unmarshal configure %v \n", err)
 	}
 	if b, err := json.MarshalIndent(All, "", "    "); err != nil {
+		panic(err)
+	} else {
 		fmt.Println("Configured", string(b))
 	}
 

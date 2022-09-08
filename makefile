@@ -7,7 +7,7 @@ MODE=debug
 
 GIT_VERSION ?= $(shell git describe --tags --always --dirty)
 GO_VERSION ?= $(shell go version)
-BUILD_TIME ?= $(shell date '+%Y-%m-%d__%H:%M:%S.%p')
+BUILD_TIME ?= $(shell date '+%Y-%m-%d__%H:%M:%S%p')
 OS := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
 ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 TAG := $(VERSION)__$(OS)_$(ARCH)

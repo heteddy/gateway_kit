@@ -11,6 +11,7 @@ import (
 	"gateway_kit/transport/middleware"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 // MakeHttpHandler
@@ -30,11 +31,19 @@ func MakeHttpHandler() *gin.Engine {
 		middleware.RateLimiter(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 	)
 
-	servicePath := router.Group("/"+config.All.Service, func(c *gin.Context) {
+	admin := router.Group("/"+config.All.Service+"/admin", func(c *gin.Context) {
 		// todo 增加一个特殊的认证
 		c.Next()
 	})
-	pprof.RouteRegister(servicePath, "pprof")
-	endpoint.StringRouteReg(servicePath)
+	admin.Use( // 超时时间
+		middleware.ContextTimeout(time.Millisecond * time.Duration(config.All.Server.Timeout)),
+	)
+	pprof.RouteRegister(admin, "pprof")
+	endpoint.StringRouteReg(admin)
+
+	proxy := router.Group("/" + config.All.Service + "/proxy")
+	proxy.Use(
+		middleware.ContextTimeout(time.Millisecond * time.Duration(config.All.Gateway.Timeout)),
+	)
 	return router
 }

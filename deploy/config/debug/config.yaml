@@ -1,15 +1,15 @@
 service: teddy-gateway
-timeout: 3000
+timeout: 3000  # 单位ms
 version: v0.1.0
 mode: debug
 server:
   httpPort: 9901
-  timeout: 4000
+  timeout: 4000 # 单位ms
 
 gateway:
   httpPort: 9903
   grpcPort: 9904
-  timeout: 4000
+  timeout: 4000 # 单位ms
 hystrix:
 
 
