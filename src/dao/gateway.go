@@ -6,7 +6,15 @@
 package dao
 
 import (
+	"context"
+	"errors"
+	"gateway_kit/config"
+	"gateway_kit/util/mongodb"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -39,4 +47,84 @@ type GatewayEntity struct {
 */
 
 type GatewayDao struct {
+	mongodb.Dao
+}
+
+func NewGatewayDao() *GatewayDao {
+	indices := make(map[string]mongo.IndexModel)
+	idxSvcName := "idx_gw_name"
+	indexBackground := true
+	unique := true
+
+	indices[idxSvcName] = mongo.IndexModel{
+		Keys: bson.D{{"name", 1}, {"deleted_at", 1}},
+		Options: &options.IndexOptions{
+			Name:       &idxSvcName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
+	return &GatewayDao{
+		Dao: mongodb.Dao{
+			Client:        config.MongoEngine,
+			Table:         "",
+			IndexParamMap: indices,
+		},
+	}
+}
+
+func (engine *GatewayDao) GetGateway(ctx context.Context, svc string) (entities []*GatewayEntity, err error) {
+	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"name", svc}, {"deleted_at", 0}}, opt)
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
+	}
+}
+
+//func (engine *GatewayDao) Delete(ctx context.Context, _id string) error {
+//	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+//		return err
+//	} else {
+//		if _, err2 := engine.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
+//			return err2
+//		}
+//		return nil
+//	}
+//}
+
+func (engine *GatewayDao) Insert(ctx context.Context, gw *GatewayEntity) (*GatewayEntity, error) {
+	gw.CreatedAt = time.Now()
+	gw.UpdatedAt = time.Now()
+	result, err := engine.Collection().InsertOne(ctx, gw)
+	if err != nil {
+		return gw, err
+	} else {
+		if objID, ok := result.InsertedID.(primitive.ObjectID); ok {
+			gw.ID = &objID
+			return gw, nil
+		}
+		return gw, errors.New("mongo _id类型转换错误")
+	}
+}
+
+func (engine *GatewayDao) Update(ctx context.Context, _id string, gw *GatewayEntity) (*GatewayEntity, error) {
+	//gw.CreatedAt = time.Now()
+	gw.UpdatedAt = time.Now()
+	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+		return gw, err
+	} else {
+
+		ret, err := engine.Collection().UpdateByID(ctx, objID, gw, options.Update().SetUpsert(false))
+		if err != nil {
+			return gw, err
+		} else {
+			config.Logger.Info("update ", zap.String("_id", _id), zap.Int64("count", ret.ModifiedCount))
+			return gw, nil
+		}
+
+	}
 }
