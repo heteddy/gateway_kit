@@ -3,7 +3,7 @@
 // @Description:
 // @Date   : 2022/9/7 21:21
 
-package svc
+package svr
 
 import (
 	"fmt"

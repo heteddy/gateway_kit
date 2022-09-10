@@ -1,9 +1,9 @@
 // @Author : detaohe
-// @File   : svc
+// @File   : svr
 // @Description:
 // @Date   : 2022/8/30 18:04
 
-package svc
+package svr
 
 import (
 	"context"

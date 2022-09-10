@@ -6,12 +6,15 @@
 package dao
 
 import (
+	"context"
+	"errors"
 	"gateway_kit/config"
-	mongo2 "gateway_kit/util/mongodb"
+	"gateway_kit/util/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -25,11 +28,12 @@ type HttpSvcEntity struct {
 	Name           string              `json:"name" bson:"name"` //http服务，
 	Description    string              `json:"description" bson:"description"`
 	Addrs          []string            `json:"addrs" bson:"addrs"` // k8s 系统才使用,其他时候从服务发现中获取
-	BlackList      []string            `json:"black_list" bson:"black_list"`
-	WhiteList      []string            `json:"white_list" bson:"white_list"`
-	ClientFlow     int                 `json:"client_flow" bson:"client_flow"`                                           // 客户端流量控制
-	SvrFlow        int                 `json:"svr_flow" bson:"svr_flow"`                                                 // 服务端流量控制
+	BlockList      []string            `json:"block_list" bson:"block_list"`
+	AllowList      []string            `json:"allow_list" bson:"allow_list"`
+	ClientQps      int                 `json:"client_qps" bson:"client_qps"`                                             // 客户端流量控制
+	ServerQps      int                 `json:"server_qps" bson:"server_qps"`                                             // 服务端流量控制
 	Category       int                 `json:"category"  bson:"category" description:"匹配类型 domain=域名, url_prefix=url前缀"` // 如果gateway绑定多个域名，可以通过访问的host，来进行重定向
+	MatchRule      string              `json:"match_rule" bson:"match_rule"`                                             // 匹配的项目与category结合使用，如果是domain，host==match_rule，否则是url前缀匹配
 	IsHttps        int                 `json:"need_https" bson:"is_https" description:"type=支持https 1=支持"`
 	IsWebsocket    int                 `json:"need_websocket" bson:"is_websocket" description:"启用websocket 1=启用"`
 	StripUri       []string            `json:"strip_uri" bson:"strip_uri" description:"启用strip_uri, 去掉的uri前缀"` // 如果修改url可以通过gateway修改
@@ -41,17 +45,17 @@ type HttpSvcEntity struct {
 }
 
 type HttpSvcDao struct {
-	mongo2.Dao
+	mongodb.Dao
 }
 
 func NewHttpSvcDao() *HttpSvcDao {
 	indices := make(map[string]mongo.IndexModel)
-	idxSvcName := "idx_svc_name_deleted"
+	idxSvcName := "idx_svc_name_category_rule_deleted"
 	indexBackground := true
 	unique := true
 
 	indices[idxSvcName] = mongo.IndexModel{
-		Keys: bson.D{{"name", 1}, {"deleted_at", 1}},
+		Keys: bson.D{{"name", 1}, {"deleted_at", 1}, {"category", 1}, {"rule", 1}},
 		Options: &options.IndexOptions{
 			Name:       &idxSvcName,
 			Background: &indexBackground,
@@ -59,10 +63,78 @@ func NewHttpSvcDao() *HttpSvcDao {
 		},
 	}
 	return &HttpSvcDao{
-		Dao: mongo2.Dao{
+		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
 			Table:         "",
 			IndexParamMap: indices,
 		},
+	}
+}
+
+func (engine *HttpSvcDao) All(ctx context.Context) (entities []*HttpSvcEntity, err error) {
+	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.M{"deleted_at": 0}, opt)
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
+	}
+}
+
+func (engine *HttpSvcDao) GetSvc(ctx context.Context, svc string) (entities []*HttpSvcEntity, err error) {
+	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"name", svc}, {"deleted_at", 0}}, opt)
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
+	}
+}
+
+func (engine *HttpSvcDao) Delete(ctx context.Context, _id string) error {
+	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+		return err
+	} else {
+		if _, err2 := engine.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
+			return err2
+		}
+		return nil
+	}
+}
+
+func (engine *HttpSvcDao) Insert(ctx context.Context, svc *HttpSvcEntity) (*HttpSvcEntity, error) {
+	svc.CreatedAt = time.Now()
+	svc.UpdatedAt = time.Now()
+	result, err := engine.Collection().InsertOne(ctx, svc)
+	if err != nil {
+		return svc, err
+	} else {
+		if objID, ok := result.InsertedID.(primitive.ObjectID); ok {
+			svc.ID = &objID
+			return svc, nil
+		}
+		return svc, errors.New("mongo _id类型转换错误")
+	}
+}
+
+func (engine *HttpSvcDao) Update(ctx context.Context, _id string, svc *HttpSvcEntity) (*HttpSvcEntity, error) {
+	//svc.CreatedAt = time.Now()
+	svc.UpdatedAt = time.Now()
+	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+		return svc, err
+	} else {
+
+		ret, err := engine.Collection().UpdateByID(ctx, objID, svc, options.Update().SetUpsert(false))
+		if err != nil {
+			return svc, err
+		} else {
+			config.Logger.Info("update ", zap.String("_id", _id), zap.Int64("count", ret.ModifiedCount))
+			return svc, nil
+		}
+
 	}
 }

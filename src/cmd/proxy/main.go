@@ -10,7 +10,7 @@ import (
 	"gateway_kit/config"
 	"gateway_kit/gateway"
 	"gateway_kit/gateway/lb"
-	"gateway_kit/svc"
+	"gateway_kit/svr"
 	transportHttp "gateway_kit/transport/http"
 	"github.com/lukesampson/figlet/figletlib"
 	"github.com/spf13/cobra"
@@ -131,7 +131,7 @@ func printBanner(svc string) {
 func startServer() {
 	printBanner(config.All.Service)
 	errC := make(chan error)
-	go svc.Interrupt(errC)
+	go svr.Interrupt(errC)
 	handler := transportHttp.MakeHttpHandler()
 	svr := &http.Server{
 		Addr:           ":" + config.All.Server.HttpPort,

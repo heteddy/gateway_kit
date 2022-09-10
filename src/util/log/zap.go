@@ -68,7 +68,7 @@ func InitZapLogger(logPath string, service string, options ...LogOption) (*zap.L
 		zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(zapWriter)),
 		level,
 	)
-	l.logger = zap.New(core, zap.AddCaller(), zap.Fields(zap.String("svc", l.service)))
+	l.logger = zap.New(core, zap.AddCaller(), zap.Fields(zap.String("svr", l.service)))
 	if l.global {
 		zap.ReplaceGlobals(l.logger)
 		return zap.L(), nil

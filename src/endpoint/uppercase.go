@@ -6,7 +6,7 @@
 package endpoint
 
 import (
-	"gateway_kit/svc/uppercase"
+	"gateway_kit/svr/uppercase"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
