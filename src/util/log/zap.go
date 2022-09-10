@@ -3,7 +3,7 @@
 // @Description:
 // @Date   : 2022/9/4 18:13
 
-package util
+package log
 
 import (
 	rotatelogs "github.com/lestrrat/go-file-rotatelogs"

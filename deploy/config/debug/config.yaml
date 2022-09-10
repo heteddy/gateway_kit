@@ -1,7 +1,8 @@
-service: teddy-gateway
+service: gateway-kit
 timeout: 3000  # 单位ms
 version: v0.1.0
 mode: debug
+k8s: true
 server:
   httpPort: 9901
   timeout: 4000 # 单位ms
@@ -16,3 +17,15 @@ hystrix:
 ratelimit:
   limit: 200  # 每秒产生多少token
   burst: 500  # 可以缓存的最大容量
+
+mongoC:
+  hosts: 192.168.64.5:27017,192.168.64.6:27017,192.168.64.7:27017
+  user:
+  pass:
+  database: gateway
+  replica: rs0
+
+tables:
+  http: http_service
+  grpc: grpc_service
+  tcp: tcp_service

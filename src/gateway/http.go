@@ -8,15 +8,12 @@ package gateway
 import (
 	"bytes"
 	"compress/gzip"
-	"gateway_kit/lb"
-	"gateway_kit/svc"
-	"gateway_kit/util"
+	"gateway_kit/gateway/lb"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -33,45 +30,45 @@ var transport = &http.Transport{
 	IdleConnTimeout:     60 * time.Second,
 }
 
-func NewHttpReverseProxy(repo *svc.Repo, l lb.LoadBalancer) *httputil.ReverseProxy {
+func NewHttpReverseProxy(repo *ServiceRepo, l lb.LoadBalancer) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
-			// 随机选择一个url
-			// note api gateway的功能： url 改写 rewrite
-			// /api-gateway/server2
-			re, _ := regexp.Compile("^/api-gateway/(.*)")
-			urlPath := re.ReplaceAllString(req.URL.Path, "$1")
-			svcName := ServiceName(urlPath)
-			// 是否修改host
-			hosts, err := repo.GetServices(svcName)
-			log.Printf("servicename=%s,hosts=%v \n", svcName, hosts)
-			if err != nil {
-
-			} else {
-				host, err := l.Next(hosts) // 这里需要返回一个对象，scheme， host都是从这里获取
-				log.Printf("loadbalance host=%s, error=%v\n", host, err)
-				if err != nil {
-
-				} else {
-					// 是否修改scheme
-					req.URL.Scheme = "http" // 通过配置获取scheme；是否可以转换https-> http wss->ws
-					req.URL.Host = host
-					// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
-					req.URL.Path = util.JoinPath("", urlPath)
-
-				}
-			}
-
-			if _, ok := req.Header["User-Agent"]; !ok {
-				// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header
-				req.Header.Set("User-Agent", "teddy-api-gateway")
-			} else {
-				req.Header.Add("User-Agent", "api-gateway")
-			}
-			for k, v := range req.Header {
-				log.Printf("k=%s,v=%s\n", k, v)
-			}
-			log.Printf("new request to %s", req.URL.String())
+			//// 随机选择一个url
+			//// note api gateway的功能： url 改写 rewrite
+			//// /api-gateway/server2
+			//re, _ := regexp.Compile("^/api-gateway/(.*)")
+			//urlPath := re.ReplaceAllString(req.URL.Path, "$1")
+			//svcName := ServiceName(urlPath)
+			//// 是否修改host
+			//hosts, err := repo.GetServices(svcName)
+			//log.Printf("servicename=%s,hosts=%v \n", svcName, hosts)
+			//if err != nil {
+			//
+			//} else {
+			//	host, err := l.Next(hosts) // 这里需要返回一个对象，scheme， host都是从这里获取
+			//	log.Printf("loadbalance host=%s, error=%v\n", host, err)
+			//	if err != nil {
+			//
+			//	} else {
+			//		// 是否修改scheme
+			//		req.URL.Scheme = "http" // 通过配置获取scheme；是否可以转换https-> http wss->ws
+			//		req.URL.Host = host
+			//		// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
+			//		req.URL.Path = util.JoinPath("", urlPath)
+			//
+			//	}
+			//}
+			//
+			//if _, ok := req.Header["User-Agent"]; !ok {
+			//	// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header
+			//	req.Header.Set("User-Agent", "teddy-api-gateway")
+			//} else {
+			//	req.Header.Add("User-Agent", "api-gateway")
+			//}
+			//for k, v := range req.Header {
+			//	log.Printf("k=%s,v=%s\n", k, v)
+			//}
+			//log.Printf("new request to %s", req.URL.String())
 		},
 		Transport: transport,
 		ModifyResponse: func(resp *http.Response) error {

@@ -6,13 +6,13 @@
 package config
 
 import (
-	"gateway_kit/util"
+	"gateway_kit/util/log"
 	"go.uber.org/zap"
 )
 
 var Logger *zap.Logger
 
 func InitLogger(path, name string) (e error) {
-	Logger, e = util.InitZapLogger(path, name)
+	Logger, e = log.InitZapLogger(path, name)
 	return
 }

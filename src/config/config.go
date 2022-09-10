@@ -6,8 +6,7 @@
 package config
 
 import (
-	"encoding/json"
-	"fmt"
+	"gateway_kit/util/mongodb"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"log"
@@ -38,6 +37,7 @@ type Configure struct {
 		Limit int
 		Burst int
 	}
+	MongoC mongodb.Config
 }
 
 func InitConfigure(configureFile, logPath string) error {
@@ -57,16 +57,19 @@ func InitConfigure(configureFile, logPath string) error {
 	if err := vp.Unmarshal(&All); err != nil {
 		log.Fatalf("Failed to Unmarshal configure %v \n", err)
 	}
-	if b, err := json.MarshalIndent(All, "", "    "); err != nil {
-		panic(err)
-	} else {
-		fmt.Println("Configured", string(b))
-	}
 
+	//if b, err := json.MarshalIndent(All, "", "    "); err != nil {
+	//	panic(err)
+	//} else {
+	//	fmt.Println("Configured", string(b))
+	//}
+	gin.SetMode(All.Mode)
 	if loggerErr := InitLogger(logPath, All.Service); loggerErr != nil {
 		panic(loggerErr)
 	}
-	gin.SetMode(All.Mode)
+
+	InitMongo(All.MongoC, All.Mode)
+	//gin.SetMode("test")
 
 	return nil
 }

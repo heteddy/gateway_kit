@@ -15,6 +15,6 @@ import (
 func Interrupt(errC chan<- error) {
 	signalC := make(chan os.Signal, 1)
 	signal.Notify(signalC, syscall.SIGINT, syscall.SIGTERM)
-	err := fmt.Errorf("Interrupt %s", <-signalC)
+	err := fmt.Errorf("Interrupt %serviceAddrs", <-signalC)
 	errC <- err
 }

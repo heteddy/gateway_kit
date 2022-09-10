@@ -1,0 +1,19 @@
+service: gateway-kit
+timeout: 3000  # 单位ms
+version: v0.1.0
+mode: release
+k8s: true
+server:
+  httpPort: 9901
+  timeout: 4000 # 单位ms
+
+gateway:
+  httpPort: 9903
+  grpcPort: 9904
+  timeout: 4000 # 单位ms
+hystrix:
+
+
+ratelimit:
+  limit: 200  # 每秒产生多少token
+  burst: 500  # 可以缓存的最大容量

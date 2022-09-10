@@ -20,9 +20,9 @@ all: build
 
 build:
 	@cd ./src && go mod tidy
-	-cd ./src && swag init -g ./cmd/server/main.go
-	cd ./src/cmd/server && go build -ldflags ${LDFLAGS} -race -o ${SVR_BIN} main.go
-	mv ./src/cmd/server/${SVR_BIN} ./deploy
+	-cd ./src && swag init -g ./cmd/proxy/main.go
+	cd ./src/cmd/proxy && go build -ldflags ${LDFLAGS} -race -o ${SVR_BIN} main.go
+	mv ./src/cmd/proxy/${SVR_BIN} ./deploy
 
 mod:
 	@cd ./src && go mod tidy

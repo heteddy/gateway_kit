@@ -3,12 +3,12 @@
 // @Description:
 // @Date   : 2022/4/23 9:01 PM
 
-package transport
+package http
 
 import (
 	"gateway_kit/config"
 	"gateway_kit/endpoint"
-	"gateway_kit/transport/middleware"
+	"gateway_kit/transport/http/middleware"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"time"

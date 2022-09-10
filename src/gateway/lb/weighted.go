@@ -1,7 +1,7 @@
 // @Author : detaohe
-// @File   : roundrobin.go
+// @File   : weighted.go
 // @Description:
-// @Date   : 2022/9/3 17:24
+// @Date   : 2022/9/10 11:56
 
 package lb
 
@@ -9,9 +9,6 @@ import (
 	"errors"
 	"strconv"
 )
-
-type roundrobin struct {
-}
 
 type weightedRoundRobinLB struct {
 	nodes []*weightNode

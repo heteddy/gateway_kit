@@ -1,9 +1,9 @@
 // @Author : detaohe
-// @File   : mongo.go
+// @File   : mongodb.go
 // @Description:
 // @Date   : 2022/4/17 8:21 PM
 
-package util
+package mongodb
 
 import (
 	"context"
@@ -14,30 +14,31 @@ import (
 	"time"
 )
 
-type MongoClient struct {
+type Client struct {
 	*mongo.Client
 	*mongo.Database
-	config *MongoConfig
+	config *Config
 	opts   *options.ClientOptions
 }
 
-type MongoConfig struct {
-	Hosts      []string `json:"hosts"`
-	ReplicaSet string   `json:"replica_set"`
-	Database   string   `json:"database"`
+type Config struct {
+	Hosts    []string `json:"hosts"`
+	User     string   `json:"user"`
+	Pass     string   `json:"pass"`
+	Replica  string   `json:"replica"`
+	Database string   `json:"database"`
 }
 
-// New 创建一个自定义的client，继承自*mongo.Client
+// New 创建一个自定义的client，继承自*mongodb.Client
 // @Description: 只支持副本集模式
 // @param config 基本配置
 // @param opts
-// @return *MongoClient
+// @return *Client
 // @return error
-//
-func New(config MongoConfig, opts ...*options.ClientOptions) (*MongoClient, error) {
+func New(c Config, opts ...*options.ClientOptions) (*Client, error) {
 	opt := options.Client().
-		SetHosts(config.Hosts).
-		SetReplicaSet("rs0").
+		SetHosts(c.Hosts).
+		SetReplicaSet(c.Replica).
 		SetConnectTimeout(10 * time.Second).
 		SetMaxPoolSize(20).
 		SetMinPoolSize(5).
@@ -59,18 +60,39 @@ func New(config MongoConfig, opts ...*options.ClientOptions) (*MongoClient, erro
 	} else {
 		log.Println("连接成功")
 	}
-	db := client.Database(config.Database)
+	db := client.Database(c.Database)
 	collectionNames, err2 := db.ListCollectionNames(context.Background(), options.ListCollections())
 	if err2 != nil {
 		log.Println("error of collections", err)
 	} else {
 		log.Println("collection names=", collectionNames)
 	}
-	mongoClient := &MongoClient{
-		config:   &config,
+	mongoClient := &Client{
+		config:   &c,
 		Client:   client,
 		Database: db,
 		opts:     merged, // 方便打印
 	}
 	return mongoClient, nil
+}
+
+type Dao struct {
+	Client        *Client
+	Table         string
+	IndexParamMap map[string]mongo.IndexModel
+}
+
+func (m Dao) Collection() *mongo.Collection {
+	return m.Client.Collection(m.Table)
+}
+
+func (m Dao) CreateIndex(model mongo.IndexModel) {
+	indexView := m.Collection().Indexes()
+	index, err := indexView.CreateOne(context.Background(), model)
+	if err != nil {
+		log.Fatalf("index create failure, err =%v\n", err)
+
+	} else {
+		log.Println("index created", index)
+	}
 }
