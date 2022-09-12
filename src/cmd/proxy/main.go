@@ -8,9 +8,9 @@ package main
 import (
 	"fmt"
 	"gateway_kit/config"
-	"gateway_kit/gateway"
-	"gateway_kit/gateway/lb"
-	"gateway_kit/svr"
+	"gateway_kit/core/gateway"
+	"gateway_kit/core/lb"
+	"gateway_kit/transport"
 	transportHttp "gateway_kit/transport/http"
 	"github.com/lukesampson/figlet/figletlib"
 	"github.com/spf13/cobra"
@@ -129,9 +129,9 @@ func printBanner(svc string) {
 //}
 
 func startServer() {
-	printBanner(config.All.Service)
+	printBanner(config.All.Name)
 	errC := make(chan error)
-	go svr.Interrupt(errC)
+	go transport.Interrupt(errC)
 	handler := transportHttp.MakeHttpHandler()
 	svr := &http.Server{
 		Addr:           ":" + config.All.Server.HttpPort,

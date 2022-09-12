@@ -31,7 +31,7 @@ func MakeHttpHandler() *gin.Engine {
 		middleware.RateLimiter(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 	)
 
-	admin := router.Group("/"+config.All.Service+"/admin", func(c *gin.Context) {
+	admin := router.Group("/"+config.All.Name+"/admin", func(c *gin.Context) {
 		// todo 增加一个特殊的认证
 		c.Next()
 	})
@@ -41,7 +41,7 @@ func MakeHttpHandler() *gin.Engine {
 	pprof.RouteRegister(admin, "pprof")
 	endpoint.StringRouteReg(admin)
 
-	proxy := router.Group("/" + config.All.Service + "/proxy")
+	proxy := router.Group("/" + config.All.Name + "/proxy")
 	proxy.Use(
 		middleware.ContextTimeout(time.Millisecond * time.Duration(config.All.Gateway.Timeout)),
 	)

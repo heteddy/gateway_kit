@@ -7,6 +7,7 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -105,6 +106,21 @@ func (m Dao) Delete(ctx context.Context, _id string) error {
 	} else {
 		if _, err2 := m.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
 			return err2
+		}
+		return nil
+	}
+}
+
+func (m Dao) SoftDelete(ctx context.Context, _id string) error {
+	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+		return err
+	} else {
+		updatedAt := time.Now().Unix()
+		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"deleted_at": updatedAt}, options.Update().SetUpsert(false))
+		if err != nil {
+			return err
+		} else {
+			fmt.Printf("delete id=%s, deleted_at=%d, updated_count=%d\n", _id, updatedAt, ret.ModifiedCount)
 		}
 		return nil
 	}

@@ -6,6 +6,7 @@
 package config
 
 import (
+	"gateway_kit/util"
 	"gateway_kit/util/mongodb"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -21,7 +22,7 @@ var (
 )
 
 type Configure struct {
-	Service string
+	Name    string
 	Mode    string // release debug
 	Version string
 	Server  struct {
@@ -41,7 +42,6 @@ type Configure struct {
 }
 
 func InitConfigure(configureFile, logPath string) error {
-	//All.Service = "teddy-gateway"
 	initEnvironments()
 	vp := viper.New()
 	vp.SetConfigFile(configureFile)
@@ -64,11 +64,12 @@ func InitConfigure(configureFile, logPath string) error {
 	//	fmt.Println("Configured", string(b))
 	//}
 	gin.SetMode(All.Mode)
-	if loggerErr := InitLogger(logPath, All.Service); loggerErr != nil {
+	util.TranslateValidator()
+	if loggerErr := InitLogger(logPath, All.Name); loggerErr != nil {
 		panic(loggerErr)
 	}
-
 	InitMongo(All.MongoC, All.Mode)
+	// 初始化
 	//gin.SetMode("test")
 
 	return nil

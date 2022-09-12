@@ -3,11 +3,11 @@
 // @Description:
 // @Date   : 2022/8/30 18:04
 
-package svr
+package admin
 
 import (
 	"context"
-	"gateway_kit/gateway"
+	"gateway_kit/core/gateway"
 )
 
 type Upper interface {
@@ -16,7 +16,7 @@ type Upper interface {
 
 type ServiceReg struct {
 	//
-	repo gateway.ServiceRepo //  以后想办法通过网络保持长连接或者etcd watch变化
+	repo gateway.HttpServiceRepo //  以后想办法通过网络保持长连接或者etcd watch变化
 }
 
 // ServiceRegRequest 创建 更新 request

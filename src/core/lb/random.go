@@ -14,20 +14,28 @@ import (
 
 type randomLB struct {
 	mutex        sync.RWMutex
-	serviceAddrs map[string][]string
+	serviceAddrs map[string][]*Node
 }
 
 func NewRandomLB() LoadBalancer {
 	return &randomLB{
 		mutex:        sync.RWMutex{},
-		serviceAddrs: make(map[string][]string),
+		serviceAddrs: make(map[string][]*Node),
 	}
 }
-func (lb *randomLB) Update(svc string, addrs []string) {
+func (lb *randomLB) UpdateNodes(nodes []*Node) {
 	lb.mutex.Lock()
 	defer lb.mutex.Unlock()
-	if _, existed := lb.serviceAddrs[svc]; existed {
-		lb.serviceAddrs[svc] = addrs
+	lb.serviceAddrs = make(map[string][]*Node)
+	for _, n := range nodes {
+		if _nodes, existed := lb.serviceAddrs[n.SvcName]; existed {
+			lb.serviceAddrs[n.SvcName] = append(_nodes, n)
+		} else {
+			newNodes := make([]*Node, 1, 1)
+			newNodes[0] = n
+			lb.serviceAddrs[n.SvcName] = newNodes
+		}
+
 	}
 }
 func (lb *randomLB) Next(svc string) (string, error) {
@@ -38,7 +46,7 @@ func (lb *randomLB) Next(svc string) (string, error) {
 	lb.mutex.RUnlock()
 	if len(addrs) > 0 {
 		idx := n % int64(len(addrs))
-		return addrs[idx], nil
+		return addrs[idx].Addr, nil
 	} else {
 		return "", errors.New("no service available")
 	}

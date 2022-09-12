@@ -7,11 +7,20 @@ package lb
 
 import (
 	"errors"
-	"strconv"
+	"sync"
 )
 
 type weightedRoundRobinLB struct {
-	nodes []*weightNode
+	//nodes   []*weightNode
+	nodeMap map[string][]*weightNode
+	mutex   sync.RWMutex
+}
+
+func NewWeightedRoundRobinLB() LoadBalancer {
+	return &weightedRoundRobinLB{
+		nodeMap: make(map[string][]*weightNode),
+		mutex:   sync.RWMutex{},
+	}
 }
 
 /*
@@ -48,53 +57,51 @@ type weightNode struct {
 //	lb.nodes = append(lb.nodes, node)
 //}
 
-func (lb *weightedRoundRobinLB) Add(params ...string) error {
-	if len(params) != 2 {
-		return errors.New("参数错误")
+func (lb *weightedRoundRobinLB) UpdateNodes(nodes []*Node) {
+	lb.mutex.Lock()
+	defer lb.mutex.Unlock()
+	//lb.nodes = make([]*weightNode, 0, len(nodes))
+	for _, n := range nodes {
+		wNode := &weightNode{
+			Addr:      n.Addr,
+			Weight:    n.Weight,
+			Current:   0,
+			Effective: n.Weight,
+		}
+		//lb.nodes = append(lb.nodes, wNode)
+		if _wNodeList, existed := lb.nodeMap[n.SvcName]; existed {
+			lb.nodeMap[n.SvcName] = append(_wNodeList, wNode)
+		} else {
+			newNodeList := make([]*weightNode, 0, 1)
+			newNodeList = append(newNodeList, wNode)
+			lb.nodeMap[n.SvcName] = newNodeList
+		}
 	}
-	v, err := strconv.ParseInt(params[1], 10, 64)
-	if err != nil {
-		return err
-	}
-	node := &weightNode{
-		Addr:      params[0],
-		Weight:    v,
-		Current:   0,
-		Effective: v,
-	}
-	// 构造weight node
-	//node.Effective = node.Weight
-	lb.nodes = append(lb.nodes, node)
-	return nil
-}
-func (lb *weightedRoundRobinLB) Update() {
-
 }
 
 // Next
 // 选择currentWeight最大的node，
-func (lb *weightedRoundRobinLB) Next() (string, error) {
-	var total int64 // total是effective
-	var choice *weightNode
-	for _, node := range lb.nodes {
-		node.Current += node.Effective
-		total += node.Effective //
-		if node.Effective < node.Weight {
-			node.Effective += 1
-		}
-		if choice == nil {
-			choice = node
-		} else {
-			if node.Current > choice.Current {
+func (lb *weightedRoundRobinLB) Next(svc string) (string, error) {
+	if _nodeList, existed := lb.nodeMap[svc]; existed {
+		var total int64 // total是effective
+		var choice *weightNode
+		for _, node := range _nodeList {
+			node.Current += node.Effective
+			total += node.Effective //
+			if node.Effective < node.Weight {
+				node.Effective += 1
+			}
+			if choice == nil {
 				choice = node
+			} else {
+				if node.Current > choice.Current {
+					choice = node
+				}
 			}
 		}
+		choice.Current -= total
+		return choice.Addr, nil
+	} else {
+		return "", errors.New("service " + svc + " not found")
 	}
-
-	choice.Current -= total
-	return choice.Addr, nil
-}
-
-func (lb *weightedRoundRobinLB) GetService(hosts []string) (string, error) {
-	return hosts[0], nil
 }

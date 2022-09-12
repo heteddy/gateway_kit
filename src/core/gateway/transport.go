@@ -12,16 +12,22 @@ import (
 	"time"
 )
 
+var TransportPoolGen *TransportPool
+var once sync.Once
+
 type TransportPool struct {
 	transportMap map[string]*http.Transport
 	mutex        sync.RWMutex
 }
 
 func NewTransportPool() *TransportPool {
-	return &TransportPool{
-		transportMap: make(map[string]*http.Transport),
-		mutex:        sync.RWMutex{},
-	}
+	once.Do(func() {
+		TransportPoolGen = &TransportPool{
+			transportMap: make(map[string]*http.Transport),
+			mutex:        sync.RWMutex{},
+		}
+	})
+	return TransportPoolGen
 }
 
 func (tp *TransportPool) Get(svcName string) *http.Transport {

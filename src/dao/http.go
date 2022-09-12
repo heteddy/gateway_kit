@@ -23,6 +23,11 @@ import (
 //	Port string `json:"port" bson:"port"`
 //}
 
+const (
+	SvcCategoryUrlPrefix = 0
+	SvcCategoryHost      = 1
+)
+
 type HttpSvcEntity struct {
 	ID             *primitive.ObjectID `json:"id" bson:"_id"`
 	Name           string              `json:"name" bson:"name"` //http服务，
