@@ -43,7 +43,8 @@ func MakeHttpHandler() *gin.Engine {
 
 	proxy := router.Group("/" + config.All.Name + "/proxy")
 	proxy.Use(
-		middleware.ContextTimeout(time.Millisecond * time.Duration(config.All.Gateway.Timeout)),
+		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
+		middleware.ServiceNameMiddleware(),
 	)
 	return router
 }

@@ -51,6 +51,20 @@ func (f *LoadBalanceFactory) Create(_type string) LoadBalancer {
 
 type LoadBalanceMgr struct {
 	balancerMap map[string]LoadBalancer
+	addrChan    chan []*Node
+	stopC       chan struct{}
+	mutex       sync.RWMutex
+}
+
+func NewLoadBalanceMgr() *LoadBalanceMgr {
+	lbm := &LoadBalanceMgr{
+		balancerMap: make(map[string]LoadBalancer),
+		addrChan:    make(chan []*Node),
+		stopC:       make(chan struct{}),
+		mutex:       sync.RWMutex{},
+	}
+	lbm.init()
+	return lbm
 }
 
 func (m *LoadBalanceMgr) init() {
@@ -68,4 +82,28 @@ func (m *LoadBalanceMgr) Update(nodes []*Node) {
 		config.Logger.Info("update lb", zap.String("lb_type", k))
 		v.UpdateNodes(nodes)
 	}
+}
+
+func (m *LoadBalanceMgr) runLoop() {
+loop:
+	for {
+		select {
+		case addrs, ok := <-m.addrChan:
+			if !ok {
+				break loop
+			}
+			m.Update(addrs)
+		case <-m.stopC:
+			break loop
+		}
+	}
+}
+
+func (m *LoadBalanceMgr) Start() {
+	go m.runLoop()
+}
+
+func (m *LoadBalanceMgr) Stop() {
+	close(m.stopC)
+	//close(m.addrChan) // todo 这里有点危险，应该由写入的关闭
 }

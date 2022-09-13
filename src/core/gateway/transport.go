@@ -13,7 +13,7 @@ import (
 )
 
 var TransportPoolGen *TransportPool
-var once sync.Once
+var onceTransport sync.Once
 
 type TransportPool struct {
 	transportMap map[string]*http.Transport
@@ -21,7 +21,7 @@ type TransportPool struct {
 }
 
 func NewTransportPool() *TransportPool {
-	once.Do(func() {
+	onceTransport.Do(func() {
 		TransportPoolGen = &TransportPool{
 			transportMap: make(map[string]*http.Transport),
 			mutex:        sync.RWMutex{},
