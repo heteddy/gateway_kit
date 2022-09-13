@@ -1,24 +1,28 @@
 // @Author : detaohe
-// @File   : http.go
+// @File   : server.go
 // @Description:
 // @Date   : 2022/4/23 9:01 PM
 
 package http
 
 import (
+	"gateway_kit/admin/endpoint"
 	"gateway_kit/config"
-	"gateway_kit/endpoint"
+	_ "gateway_kit/docs"
 	"gateway_kit/transport/http/middleware"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"net/http"
 	"time"
 )
 
-// MakeHttpHandler
+// MakeServerHandler
 // @Description:
 // @return http.Handler
 //
-func MakeHttpHandler() *gin.Engine {
+func MakeServerHandler() *gin.Engine {
 	router := gin.New()
 	router.Use(
 		gin.Recovery(),
@@ -30,21 +34,23 @@ func MakeHttpHandler() *gin.Engine {
 		middleware.AccessLogMiddleware(config.Logger),
 		middleware.RateLimiter(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 	)
+	router.GET("/healthz", func(c *gin.Context) {
+		c.JSON(http.StatusOK, "")
+	})
 
-	admin := router.Group("/"+config.All.Name+"/admin", func(c *gin.Context) {
+	svr := router.Group("/"+config.All.Name+"-svr", func(c *gin.Context) {
 		// todo 增加一个特殊的认证
 		c.Next()
 	})
-	admin.Use( // 超时时间
+	pprof.RouteRegister(svr, "pprof")
+	svr.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
+
+	svr.Use( // 超时时间
 		middleware.ContextTimeout(time.Millisecond * time.Duration(config.All.Server.Timeout)),
 	)
-	pprof.RouteRegister(admin, "pprof")
-	endpoint.StringRouteReg(admin)
 
-	proxy := router.Group("/" + config.All.Name + "/proxy")
-	proxy.Use(
-		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
-		middleware.ServiceNameMiddleware(),
-	)
+	endpoint.GatewayRouteRegister(svr)
+	endpoint.HttpSvcRouteRegister(svr)
+
 	return router
 }

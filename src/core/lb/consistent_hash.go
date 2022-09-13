@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : hash.go
+// @File   : consistent_hash.go
 // @Description:
 // @Date   : 2022/9/3 18:41
 
@@ -22,9 +22,9 @@ type ConsistentHash struct {
 	hashMap  map[uint32]string // 节点hashmap
 }
 
-// Get 获取key所在节点信息
+// Next 获取key所在节点信息
 // todo 待测试
-func (ch *ConsistentHash) Get(key string) (string, error) {
+func (ch *ConsistentHash) Next(key string) (string, error) {
 	if len(ch.hashMap) == 0 {
 		return "", errors.New("ch map 为空")
 	}
@@ -39,4 +39,8 @@ func (ch *ConsistentHash) Get(key string) (string, error) {
 	ch.mux.Lock()
 	defer ch.mux.Unlock()
 	return ch.hashMap[ch.keys[idx]], nil
+}
+
+func (ch *ConsistentHash) UpdateNodes([]*Node) {
+
 }

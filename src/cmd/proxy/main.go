@@ -8,8 +8,7 @@ package main
 import (
 	"fmt"
 	"gateway_kit/config"
-	"gateway_kit/core/gateway"
-	"gateway_kit/core/lb"
+	"gateway_kit/core"
 	"gateway_kit/transport"
 	transportHttp "gateway_kit/transport/http"
 	"github.com/lukesampson/figlet/figletlib"
@@ -132,7 +131,7 @@ func startServer() {
 	printBanner(config.All.Name)
 	errC := make(chan error)
 	go transport.Interrupt(errC)
-	handler := transportHttp.MakeHttpHandler()
+	handler := transportHttp.MakeServerHandler()
 	svr := &http.Server{
 		Addr:           ":" + config.All.Server.HttpPort,
 		Handler:        handler,
@@ -142,16 +141,18 @@ func startServer() {
 		err := svr.ListenAndServe() //改成
 		errC <- err
 	}()
-	builder := gateway.NewProxyBuilder()
-	balancer := lb.NewRoundRobin()
+	//builder := gateway.NewProxyBuilder()
+	//balancer := lb.NewRoundRobin()
 	// 清理
 	go func() {
 		// 通过配置获取负载均衡策略
 		// note 暂时hardcode
-		reverse := builder.BuildHttpProxy(balancer)
+		//reverse := builder.BuildHttpProxy(balancer)
+		core.InitCore()
+		handler := transportHttp.MakeProxyHandler() // 基于gin的engine，把reverseproxy包装到里面
 		proxySvr := &http.Server{
 			Addr:           ":" + config.All.Gateway.HttpPort,
-			Handler:        reverse,
+			Handler:        handler,
 			MaxHeaderBytes: 1 << 25,
 		}
 		log.Fatalln(proxySvr.ListenAndServe())
@@ -159,6 +160,19 @@ func startServer() {
 	<-errC
 }
 
+// @title api-gateway 接口
+// @version 0.1
+// @description api-gateway服务端接口
+// @contact.name heteddy@126.com
+// @contact.url
+// @contact.email heteddy@126.com
+// @license.name Apache 2.0
+// @license.url
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @host localhost:9901
+// host部分需要在初始化时候设置//
 func main() {
 	if err := rootCmd.Execute(); err != nil {
 		panic(err)

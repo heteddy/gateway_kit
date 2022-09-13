@@ -55,7 +55,7 @@ func (r *GinResponse) ToResp(data interface{}) {
 		r.c.JSON(http.StatusOK, response)
 	}
 }
-func (r *GinResponse) ToError(err error, msg interface{}) {
+func (r *GinResponse) ToError(err error, msg ...interface{}) {
 	//response := gin.H{"status": "error", "msg": msg}
 	switch err.(type) {
 	case validator.ValidationErrors:

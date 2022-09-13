@@ -27,7 +27,6 @@ var once sync.Once
 
 func NewManager() *LoadBalanceMgr {
 	once.Do(func() {
-
 		Manager = &LoadBalanceMgr{
 			balancerMap: make(map[string]LoadBalancer),
 		}
@@ -53,7 +52,7 @@ type LoadBalanceMgr struct {
 	balancerMap map[string]LoadBalancer
 	addrChan    chan []*Node
 	stopC       chan struct{}
-	mutex       sync.RWMutex
+	//mutex       sync.RWMutex
 }
 
 func NewLoadBalanceMgr() *LoadBalanceMgr {
@@ -61,7 +60,7 @@ func NewLoadBalanceMgr() *LoadBalanceMgr {
 		balancerMap: make(map[string]LoadBalancer),
 		addrChan:    make(chan []*Node),
 		stopC:       make(chan struct{}),
-		mutex:       sync.RWMutex{},
+		//mutex:       sync.RWMutex{},
 	}
 	lbm.init()
 	return lbm
@@ -75,6 +74,17 @@ func (m *LoadBalanceMgr) init() {
 	for _, t := range loadTypes {
 		m.balancerMap[t] = factory.Create(t)
 	}
+}
+
+func (m *LoadBalanceMgr) In() chan []*Node {
+	return m.addrChan
+}
+
+func (m *LoadBalanceMgr) Get(lbType string) LoadBalancer {
+	if _lb, existed := m.balancerMap[lbType]; existed {
+		return _lb
+	}
+	return nil
 }
 
 func (m *LoadBalanceMgr) Update(nodes []*Node) {

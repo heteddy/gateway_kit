@@ -75,7 +75,7 @@ func (repo *HttpServiceRepo) updateAccess(entities []*dao.HttpSvcEntity) {
 	_configs := make([]*AccessConfig, 0, len(entities))
 	for _, e := range entities {
 		_configs = append(_configs, &AccessConfig{
-			SvcName:  e.Name,
+			Name:     e.Name,
 			BlockIP:  e.BlockList,
 			AllowIP:  e.AllowList,
 			Category: ACCESS_CONTROL_SERVICE,

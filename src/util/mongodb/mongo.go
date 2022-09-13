@@ -33,11 +33,6 @@ type Config struct {
 }
 
 // New 创建一个自定义的client，继承自*mongodb.Client
-// @Description: 只支持副本集模式
-// @param config 基本配置
-// @param opts
-// @return *Client
-// @return error
 func New(c Config, opts ...*options.ClientOptions) (*Client, error) {
 	opt := options.Client().
 		SetHosts(c.Hosts).

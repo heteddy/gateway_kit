@@ -1,9 +1,9 @@
 // @Author : detaohe
-// @File   : http.go
+// @File   : server.go
 // @Description:
 // @Date   : 2022/9/10 22:38
 
-package admin
+package service
 
 import (
 	"context"
@@ -12,17 +12,11 @@ import (
 
 type ServiceSvr struct {
 	*dao.HttpSvcDao
-	//entities     []*dao.HttpSvcEntity
-	//svcEntityMap map[string]*dao.HttpSvcEntity // 以后放到redis，目前
-	//mutex sync.RWMutex
 }
 
-func NewServiceSvr(receiver chan []*dao.HttpSvcEntity) *ServiceSvr {
+func NewServiceSvr() *ServiceSvr {
 	svr := &ServiceSvr{
 		HttpSvcDao: dao.NewHttpSvcDao(),
-		//entities:     make([]*dao.HttpSvcEntity, 0, 10),
-		//svcEntityMap: make(map[string]*dao.HttpSvcEntity),
-		//mutex:        sync.RWMutex{},
 	}
 	return svr
 }
@@ -43,6 +37,10 @@ func (svr *ServiceSvr) All(ctx context.Context) ([]*dao.HttpSvcEntity, error) {
 	return svr.HttpSvcDao.All(ctx)
 }
 
-func (svr *ServiceSvr) GetService(ctx context.Context, name string) ([]*dao.HttpSvcEntity, error) {
+func (svr *ServiceSvr) GetServiceByName(ctx context.Context, name string) ([]*dao.HttpSvcEntity, error) {
 	return svr.HttpSvcDao.GetSvc(ctx, name)
+}
+
+func (svr *ServiceSvr) GetServiceByID(ctx context.Context, id string) (*dao.HttpSvcEntity, error) {
+	return svr.HttpSvcDao.GetByID(ctx, id)
 }

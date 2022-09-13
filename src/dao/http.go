@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : http.go
+// @File   : server.go
 // @Description:
 // @Date   : 2022/9/6 21:34
 
@@ -39,8 +39,8 @@ type HttpSvcEntity struct {
 	ServerQps      int                 `json:"server_qps" bson:"server_qps"`                                             // 服务端流量控制
 	Category       int                 `json:"category"  bson:"category" description:"匹配类型 domain=域名, url_prefix=url前缀"` // 如果gateway绑定多个域名，可以通过访问的host，来进行重定向
 	MatchRule      string              `json:"match_rule" bson:"match_rule"`                                             // 匹配的项目与category结合使用，如果是domain，host==match_rule，否则是url前缀匹配
-	IsHttps        int                 `json:"need_https" bson:"is_https" description:"type=支持https 1=支持"`
-	IsWebsocket    int                 `json:"need_websocket" bson:"is_websocket" description:"启用websocket 1=启用"`
+	IsHttps        bool                `json:"need_https" bson:"is_https" description:"type=支持https 1=支持"`
+	IsWebsocket    bool                `json:"need_websocket" bson:"is_websocket" description:"启用websocket 1=启用"`
 	StripUri       []string            `json:"strip_uri" bson:"strip_uri" description:"启用strip_uri, 去掉的uri前缀"` // 如果修改url可以通过gateway修改
 	UrlRewrite     []string            `json:"url_rewrite" bson:"url_rewrite" description:"url重写功能，每行一个"`      // todo 需要支持正则表达式？,当修改了uri，可以对客户端保持兼容
 	HeaderTransfer []string            `json:"header_transfer" bson:"header_transfer"  description:"header转换支持增加(add)、删除(del)、修改(edit) 格式: add headname headvalue	"`
@@ -100,6 +100,21 @@ func (engine *HttpSvcDao) GetSvc(ctx context.Context, svc string) (entities []*H
 	}
 }
 
+func (engine *HttpSvcDao) GetByID(ctx context.Context, id string) (entity *HttpSvcEntity, err error) {
+	var objID primitive.ObjectID
+	if objID, err = primitive.ObjectIDFromHex(id); err != nil {
+		return nil, err
+	} else {
+		err = engine.Collection().FindOne(ctx, bson.M{"_id": objID}).Decode(&entity)
+		if err != nil {
+			return nil, err
+		} else {
+			return
+		}
+
+	}
+}
+
 func (engine *HttpSvcDao) Delete(ctx context.Context, _id string) error {
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return err
@@ -127,7 +142,7 @@ func (engine *HttpSvcDao) Insert(ctx context.Context, svc *HttpSvcEntity) (*Http
 }
 
 func (engine *HttpSvcDao) Update(ctx context.Context, _id string, svc *HttpSvcEntity) (*HttpSvcEntity, error) {
-	//svc.CreatedAt = time.Now()
+	//service.CreatedAt = time.Now()
 	svc.UpdatedAt = time.Now()
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return svc, err

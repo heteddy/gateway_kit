@@ -29,14 +29,14 @@ func NewProxyBuilder() *ProxyBuilder {
 	}
 }
 
-func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer) func(req *http.Request) {
+func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName string) func(req *http.Request) {
 	return func(req *http.Request) {
 		// 随机选择一个url
 		// note api gateway的功能： url 改写 rewrite
 		// /api-gateway/server2
 		re, _ := regexp.Compile("^/api-gateway/(.*)")
 		urlPath := re.ReplaceAllString(req.URL.Path, "$1")
-		svcName := ServiceName(urlPath)
+		//svcName := ServiceName(urlPath)
 		// 是否修改host
 		//hosts, err := repo.GetServices(svcName)
 		log.Printf("servicename=%s \n", svcName)
@@ -112,7 +112,7 @@ func (builder *ProxyBuilder) BuildErrorHandler() func(http.ResponseWriter, *http
 
 func (builder *ProxyBuilder) BuildHttpProxy(balancer lb.LoadBalancer, svcName string) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
-		Director:       builder.BuildDirector(balancer),
+		Director:       builder.BuildDirector(balancer, svcName),
 		Transport:      builder.transports.Get(svcName),
 		ModifyResponse: builder.BuildModifier(),
 		ErrorHandler:   builder.BuildErrorHandler(),

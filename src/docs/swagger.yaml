@@ -1,0 +1,273 @@
+definitions:
+  endpoint.GatewayRequest:
+    properties:
+      allow_list:
+        items:
+          type: string
+        type: array
+      block_list:
+        description: 网关黑名单，所有的服务通用
+        items:
+          type: string
+        type: array
+      description:
+        description: 描述
+        type: string
+      id:
+        type: string
+      name:
+        description: gateway name
+        type: string
+    required:
+    - allow_list
+    - block_list
+    - description
+    - name
+    type: object
+  endpoint.HttpSvcRequest:
+    properties:
+      addrs:
+        items:
+          type: string
+        type: array
+      allow_list:
+        items:
+          type: string
+        type: array
+      block_list:
+        description: 网关黑名单，所有的服务通用
+        items:
+          type: string
+        type: array
+      category:
+        description: 如果gateway绑定多个域名，可以通过访问的host，来进行重定向
+        type: integer
+      client_qps:
+        description: 客户端流量控制
+        type: integer
+      description:
+        description: 描述
+        type: string
+      header_transfer:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      match_rule:
+        description: 匹配的项目与category结合使用，如果是domain，host==match_rule，否则是url前缀匹配
+        type: string
+      name:
+        description: gateway name
+        type: string
+      need_https:
+        type: boolean
+      need_websocket:
+        type: boolean
+      server_qps:
+        description: 服务端流量控制
+        type: integer
+      strip_uri:
+        description: 如果修改url可以通过gateway修改
+        items:
+          type: string
+        type: array
+      url_rewrite:
+        description: todo 需要支持正则表达式？,当修改了uri，可以对客户端保持兼容
+        items:
+          type: string
+        type: array
+    required:
+    - addrs
+    - allow_list
+    - block_list
+    - category
+    - client_qps
+    - description
+    - header_transfer
+    - match_rule
+    - name
+    - need_https
+    - need_websocket
+    - server_qps
+    - strip_uri
+    - url_rewrite
+    type: object
+host: localhost:9901
+info:
+  contact:
+    email: heteddy@126.com
+    name: heteddy@126.com
+  description: api-gateway服务端接口
+  license:
+    name: Apache 2.0
+  title: api-gateway 接口
+  version: "0.1"
+paths:
+  /gateway-kit-svr/gateway:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 网关信息
+        in: body
+        name: gw
+        required: true
+        schema:
+          $ref: '#/definitions/endpoint.GatewayRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 创建
+      tags:
+      - gateway
+  /gateway-kit-svr/gateway/:
+    get:
+      consumes:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - gateway
+  /gateway-kit-svr/gateway/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 网关id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 删除
+      tags:
+      - gateway
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 网关id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 网关信息
+        in: body
+        name: gw
+        required: true
+        schema:
+          $ref: '#/definitions/endpoint.GatewayRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 更新
+      tags:
+      - gateway
+  /gateway-kit-svr/services:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: 服务信息
+        in: body
+        name: gw
+        required: true
+        schema:
+          $ref: '#/definitions/endpoint.HttpSvcRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 创建
+      tags:
+      - 服务
+  /gateway-kit-svr/services/:
+    get:
+      consumes:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - 服务
+  /gateway-kit-svr/services/{id}:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: 服务id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 删除
+      tags:
+      - 服务
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 服务id
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - 服务
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: 服务id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 服务信息
+        in: body
+        name: gw
+        required: true
+        schema:
+          $ref: '#/definitions/endpoint.HttpSvcRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 更新
+      tags:
+      - 服务
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

@@ -3,7 +3,7 @@
 // @Description:
 // @Date   : 2022/9/10 22:38
 
-package admin
+package service
 
 import (
 	"context"
@@ -30,4 +30,8 @@ func (gateway *GatewaySvc) Update(ctx context.Context, svcID string, entity *dao
 
 func (gateway *GatewaySvc) Delete(ctx context.Context, svcID string) error {
 	return gateway.GatewayDao.SoftDelete(ctx, svcID)
+}
+
+func (gateway *GatewaySvc) List(ctx context.Context) ([]*dao.GatewayEntity, error) {
+	return gateway.GatewayDao.All(ctx)
 }

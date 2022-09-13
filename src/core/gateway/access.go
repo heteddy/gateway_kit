@@ -21,7 +21,7 @@ type AccessConfig struct {
 	BlockIP  []string
 	AllowIP  []string
 	Category int
-	SvcName  string
+	Name     string
 }
 
 var Access *AccessController
@@ -64,8 +64,8 @@ func (ac *AccessController) updateConfig(configs []*AccessConfig) {
 			ac.gwAllowIP = c.AllowIP
 			ac.gwBlockIP = c.BlockIP
 		case ACCESS_CONTROL_SERVICE:
-			ac.svcAllowIP[c.SvcName] = c.AllowIP
-			ac.svcBlockIP[c.SvcName] = c.BlockIP
+			ac.svcAllowIP[c.Name] = c.AllowIP
+			ac.svcBlockIP[c.Name] = c.BlockIP
 		default:
 			config.Logger.Warn("receiving error category", zap.Int("category", c.Category))
 		}

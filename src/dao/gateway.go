@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : svr.go
+// @File   : service.go
 // @Description:
 // @Date   : 2022/4/17 8:15 PM
 
@@ -126,5 +126,16 @@ func (engine *GatewayDao) Update(ctx context.Context, _id string, gw *GatewayEnt
 			return gw, nil
 		}
 
+	}
+}
+
+func (engine *GatewayDao) All(ctx context.Context) (entities []*GatewayEntity, err error) {
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"deleted_at", 0}})
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
 	}
 }

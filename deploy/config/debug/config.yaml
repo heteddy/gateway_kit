@@ -1,4 +1,4 @@
-service: gateway-kit
+name: gateway-kit
 timeout: 3000  # 单位ms
 version: v0.1.0
 mode: debug
