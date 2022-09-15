@@ -5,7 +5,7 @@
 
 package endpoint
 
-import "gateway_kit/admin/service"
+import "gateway_kit/server/service"
 
 type HttpSvcCtrl struct {
 	svc service.ServiceSvr

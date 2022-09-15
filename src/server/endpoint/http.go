@@ -6,8 +6,8 @@
 package endpoint
 
 import (
-	"gateway_kit/admin/service"
 	"gateway_kit/dao"
+	"gateway_kit/server/service"
 	"gateway_kit/util"
 	"github.com/gin-gonic/gin"
 )
@@ -41,7 +41,7 @@ type HttpSvcRequest struct {
 // @Accept application/json
 // @Success 200 {object} string
 // @Failure 200 {object} string
-// @Router /gateway-kit-svr/services/ [get]
+// @Router /gateway-kit-svr/services [get]
 func (ctrl *httpSvcCtrl) List(c *gin.Context) {
 	response := util.NewGinResponse(c)
 	if entities, err := ctrl.svc.All(c.Request.Context()); err != nil {

@@ -29,7 +29,7 @@ const (
 )
 
 type HttpSvcEntity struct {
-	ID             *primitive.ObjectID `json:"id" bson:"_id"`
+	ID             *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name           string              `json:"name" bson:"name"` //http服务，
 	Description    string              `json:"description" bson:"description"`
 	Addrs          []string            `json:"addrs" bson:"addrs"` // k8s 系统才使用,其他时候从服务发现中获取
@@ -70,7 +70,7 @@ func NewHttpSvcDao() *HttpSvcDao {
 	return &HttpSvcDao{
 		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
-			Table:         "",
+			Table:         config.All.Tables.HttpSvc,
 			IndexParamMap: indices,
 		},
 	}

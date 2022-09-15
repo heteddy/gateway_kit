@@ -105,6 +105,17 @@ info:
   version: "0.1"
 paths:
   /gateway-kit-svr/gateway:
+    get:
+      consumes:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - gateway
     post:
       consumes:
       - application/json
@@ -121,18 +132,6 @@ paths:
           schema:
             type: string
       summary: 创建
-      tags:
-      - gateway
-  /gateway-kit-svr/gateway/:
-    get:
-      consumes:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: 列表
       tags:
       - gateway
   /gateway-kit-svr/gateway/{id}:
@@ -177,6 +176,17 @@ paths:
       tags:
       - gateway
   /gateway-kit-svr/services:
+    get:
+      consumes:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - 服务
     post:
       consumes:
       - application/json
@@ -193,18 +203,6 @@ paths:
           schema:
             type: string
       summary: 创建
-      tags:
-      - 服务
-  /gateway-kit-svr/services/:
-    get:
-      consumes:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-      summary: 列表
       tags:
       - 服务
   /gateway-kit-svr/services/{id}:

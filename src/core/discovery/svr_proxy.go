@@ -20,7 +20,7 @@ import (
 type ServiceDiscovery interface {
 }
 
-type DiscoveryProxy struct {
+type PollingDiscovery struct {
 	svcDao *dao.HttpSvcDao // 定时获取所有的服务
 	gwDao  *dao.GatewayDao
 	*util.TickerSvc
@@ -32,8 +32,8 @@ type DiscoveryProxy struct {
 	mutex        sync.RWMutex
 }
 
-func NewDiscoveryProxy(svcChan chan []*dao.HttpSvcEntity, gwChan chan *dao.GatewayEntity) *DiscoveryProxy {
-	proxy := &DiscoveryProxy{
+func NewPollingDiscovery(svcChan chan []*dao.HttpSvcEntity, gwChan chan *dao.GatewayEntity) *PollingDiscovery {
+	proxy := &PollingDiscovery{
 		svcDao:       dao.NewHttpSvcDao(),
 		gwDao:        dao.NewGatewayDao(),
 		TickerSvc:    util.NewTickerSvc("service-discovery", time.Minute, false),
@@ -47,7 +47,7 @@ func NewDiscoveryProxy(svcChan chan []*dao.HttpSvcEntity, gwChan chan *dao.Gatew
 	return proxy
 }
 
-func (discovery *DiscoveryProxy) endpoint() util.SvcEndpoint {
+func (discovery *PollingDiscovery) endpoint() util.SvcEndpoint {
 	return func() {
 		entities, err := discovery.svcDao.All(context.Background())
 		if err != nil {
@@ -67,15 +67,21 @@ func (discovery *DiscoveryProxy) endpoint() util.SvcEndpoint {
 			}
 		}
 		discovery.entities = entities
-		discovery.svcChan <- discovery.entities
+		if len(discovery.entities) > 0 {
+			discovery.svcChan <- discovery.entities
+		}
 
 		// 读取gateway
 		gatewayInfos, err := discovery.gwDao.GetGateway(context.Background(), config.All.Name)
 		if err != nil {
 			config.Logger.Error("load gateway entities error", zap.Error(err))
 			return
+		} else {
+			if len(gatewayInfos) > 0 {
+				discovery.gwInfo = gatewayInfos[0]
+				discovery.gwChan <- discovery.gwInfo
+			}
 		}
-		discovery.gwInfo = gatewayInfos[0]
-		discovery.gwChan <- discovery.gwInfo
+
 	}
 }

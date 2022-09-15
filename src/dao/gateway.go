@@ -23,14 +23,14 @@ import (
 // 并通过服务地址获取真实服务器地址；
 // 当config.yaml中配置为k8s true说明直接通过servicename访问即可
 type GatewayEntity struct {
-	ID          *primitive.ObjectID `json:"id" bson:"_id"`
+	ID          *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name        string              `json:"name" bson:"name"`               // gateway name
 	Description string              `json:"description" bson:"description"` //描述
-	BlockList   []string            `json:"block_list"`                     // 网关黑名单，所有的服务通用
-	AllowList   []string            `json:"allow_list"`                     // 网关黑名单，所有的服务通用
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   int64 // 删除时间
+	BlockList   []string            `json:"block_list" bson:"block_list"`   // 网关黑名单，所有的服务通用
+	AllowList   []string            `json:"allow_list" bson:"allow_list"`   // 网关黑名单，所有的服务通用
+	CreatedAt   time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at" bson:"updated_at"`
+	DeletedAt   int64               `json:"deleted_at" bson:"deleted_at"` // 删除时间
 }
 
 /*
@@ -67,7 +67,7 @@ func NewGatewayDao() *GatewayDao {
 	return &GatewayDao{
 		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
-			Table:         "",
+			Table:         config.All.Tables.Gateway,
 			IndexParamMap: indices,
 		},
 	}

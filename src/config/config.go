@@ -6,6 +6,8 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"gateway_kit/util"
 	"gateway_kit/util/mongodb"
 	"github.com/gin-gonic/gin"
@@ -38,6 +40,12 @@ type Configure struct {
 		Limit int
 		Burst int
 	}
+	Tables struct {
+		HttpSvc string
+		GrpcSvc string
+		TcpSvc  string
+		Gateway string
+	}
 	MongoC mongodb.Config
 }
 
@@ -58,11 +66,12 @@ func InitConfigure(configureFile, logPath string) error {
 		log.Fatalf("Failed to Unmarshal configure %v \n", err)
 	}
 
-	//if b, err := json.MarshalIndent(All, "", "    "); err != nil {
-	//	panic(err)
-	//} else {
-	//	fmt.Println("Configured", string(b))
-	//}
+	if b, err := json.MarshalIndent(All, "", "    "); err != nil {
+		panic(err)
+	} else {
+		fmt.Println("Configured", string(b))
+	}
+
 	gin.SetMode(All.Mode)
 	util.TranslateValidator()
 	if loggerErr := InitLogger(logPath, All.Name); loggerErr != nil {

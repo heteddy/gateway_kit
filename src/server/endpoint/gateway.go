@@ -6,8 +6,8 @@
 package endpoint
 
 import (
-	"gateway_kit/admin/service"
 	"gateway_kit/dao"
+	"gateway_kit/server/service"
 	"gateway_kit/util"
 	"github.com/gin-gonic/gin"
 )
@@ -18,8 +18,8 @@ type gatewayCtrl struct {
 
 type GatewayRequest struct {
 	ID          string   `json:"id"`
-	Name        string   `json:"name" binding:"name,required" validator:"min=3,max=10"`    // gateway name
-	Description string   `json:"description" binding:"required" validator:"min=0,max=127"` //描述
+	Name        string   `json:"name" binding:"required" validator:"min=3,max=30"`         // gateway name
+	Description string   `json:"description" binding:"required" validator:"min=0,max=256"` //描述
 	BlockList   []string `json:"block_list" binding:"required"`                            // 网关黑名单，所有的服务通用
 	AllowList   []string `json:"allow_list" binding:"required"`
 }
@@ -31,7 +31,7 @@ type GatewayRequest struct {
 // @Accept application/json
 // @Success 200 {object} string
 // @Failure 200 {object} string
-// @Router /gateway-kit-svr/gateway/ [get]
+// @Router /gateway-kit-svr/gateway [get]
 func (ctrl *gatewayCtrl) List(c *gin.Context) {
 	response := util.NewGinResponse(c)
 	if entities, err := ctrl.svc.List(c.Request.Context()); err != nil {
@@ -148,6 +148,7 @@ func GatewayRouteRegister(group *gin.RouterGroup, prefixOptions ...string) {
 		prefixRouter = group.Group(prefix)
 	}
 	prefixRouter.POST("/gateway", ctrl.Create)
+	prefixRouter.GET("/gateway", ctrl.List)
 	prefixRouter.PUT("/gateway/:id", ctrl.Update)
 	prefixRouter.DELETE("/gateway/:id", ctrl.Delete)
 }

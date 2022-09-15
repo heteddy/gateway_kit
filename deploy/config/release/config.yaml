@@ -13,7 +13,12 @@ gateway:
   timeout: 4000 # 单位ms
 hystrix:
 
-
 ratelimit:
   limit: 200  # 每秒产生多少token
   burst: 500  # 可以缓存的最大容量
+
+tables:
+  httpSvc: http_service
+  grpcSvc: grpc_service
+  tcpSvc: tcp_service
+  gateway: tb_gateway

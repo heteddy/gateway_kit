@@ -15,6 +15,23 @@
     "host": "localhost:9901",
     "paths": {
         "/gateway-kit-svr/gateway": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "gateway"
+                ],
+                "summary": "列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -34,25 +51,6 @@
                         }
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/gateway-kit-svr/gateway/": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "gateway"
-                ],
-                "summary": "列表",
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -127,6 +125,23 @@
             }
         },
         "/gateway-kit-svr/services": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "服务"
+                ],
+                "summary": "列表",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "consumes": [
                     "application/json"
@@ -146,25 +161,6 @@
                         }
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/gateway-kit-svr/services/": {
-            "get": {
-                "consumes": [
-                    "application/json"
-                ],
-                "tags": [
-                    "服务"
-                ],
-                "summary": "列表",
                 "responses": {
                     "200": {
                         "description": "OK",

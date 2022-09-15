@@ -5,12 +5,12 @@ mode: debug
 k8s: true
 server:
   httpPort: 9901
-  timeout: 4000 # 单位ms
+  timeout: 40000 # 单位ms
 
 gateway:
   httpPort: 9903
   grpcPort: 9904
-  timeout: 4000 # 单位ms
+  timeout: 40000 # 单位ms
 hystrix:
 
 
@@ -26,6 +26,7 @@ mongoC:
   replica: rs0
 
 tables:
-  http: http_service
-  grpc: grpc_service
-  tcp: tcp_service
+  httpSvc: tb_http_service
+  grpcSvc: tb_grpc_service
+  tcpSvc: tb_tcp_service
+  gateway: tb_gateway

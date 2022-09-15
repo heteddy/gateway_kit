@@ -6,9 +6,9 @@
 package http
 
 import (
-	"gateway_kit/admin/endpoint"
 	"gateway_kit/config"
 	_ "gateway_kit/docs"
+	"gateway_kit/server/endpoint"
 	"gateway_kit/transport/http/middleware"
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
