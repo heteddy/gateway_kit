@@ -34,6 +34,7 @@ type Configure struct {
 	Gateway struct {
 		HttpPort string
 		GrpcPort string
+		StripUri string
 		Timeout  int
 	}
 	RateLimit struct {

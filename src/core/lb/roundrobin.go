@@ -44,13 +44,13 @@ func (lb *roundRobin) UpdateNodes(nodes []*Node) {
 	defer lb.mutex.Unlock()
 
 	for _, n := range nodes {
-		if nodeList, existed := lb.nodeMap[n.SvcName]; existed {
-			lb.nodeMap[n.SvcName] = append(nodeList, n)
+		if nodeList, existed := lb.nodeMap[n.Svc]; existed {
+			lb.nodeMap[n.Svc] = append(nodeList, n)
 		} else {
 			newNodeList := make([]*Node, 0, 1)
 			newNodeList = append(newNodeList, n)
-			lb.nodeMap[n.SvcName] = newNodeList
-			lb.svcIndex[n.SvcName] = 0
+			lb.nodeMap[n.Svc] = newNodeList
+			lb.svcIndex[n.Svc] = 0
 		}
 	}
 }

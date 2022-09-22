@@ -7,6 +7,7 @@ package lb
 
 import (
 	"errors"
+	"gateway_kit/dao"
 	"math/rand"
 	"sync"
 	"time"
@@ -23,19 +24,20 @@ func NewRandomLB() LoadBalancer {
 		serviceAddrs: make(map[string][]*Node),
 	}
 }
-func (lb *randomLB) UpdateNodes(nodes []*Node) {
+func (lb *randomLB) UpdateNode(node *Node) {
 	lb.mutex.Lock()
 	defer lb.mutex.Unlock()
-	lb.serviceAddrs = make(map[string][]*Node)
-	for _, n := range nodes {
-		if _nodes, existed := lb.serviceAddrs[n.SvcName]; existed {
-			lb.serviceAddrs[n.SvcName] = append(_nodes, n)
-		} else {
-			newNodes := make([]*Node, 1, 1)
-			newNodes[0] = n
-			lb.serviceAddrs[n.SvcName] = newNodes
+	//lb.serviceAddrs = make(map[string][]*Node)
+	// service name 存在
+	if _nodes, existed := lb.serviceAddrs[node.Svc]; existed {
+		if node.EventType == dao.EventDelete {
+			for
 		}
-
+		lb.serviceAddrs[node.Svc] = append(_nodes, node)
+	} else {
+		newNodes := make([]*Node, 1, 1)
+		newNodes[0] = node
+		lb.serviceAddrs[node.Svc] = newNodes
 	}
 }
 func (lb *randomLB) Next(svc string) (string, error) {

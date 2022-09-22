@@ -50,7 +50,7 @@ func (f *LoadBalanceFactory) Create(_type string) LoadBalancer {
 
 type LoadBalanceMgr struct {
 	balancerMap map[string]LoadBalancer
-	addrChan    chan []*Node
+	addrChan    chan *Node
 	stopC       chan struct{}
 	//mutex       sync.RWMutex
 }
@@ -58,7 +58,7 @@ type LoadBalanceMgr struct {
 func NewLoadBalanceMgr() *LoadBalanceMgr {
 	lbm := &LoadBalanceMgr{
 		balancerMap: make(map[string]LoadBalancer),
-		addrChan:    make(chan []*Node),
+		addrChan:    make(chan *Node),
 		stopC:       make(chan struct{}),
 		//mutex:       sync.RWMutex{},
 	}
@@ -76,7 +76,7 @@ func (m *LoadBalanceMgr) init() {
 	}
 }
 
-func (m *LoadBalanceMgr) In() chan []*Node {
+func (m *LoadBalanceMgr) In() chan *Node {
 	return m.addrChan
 }
 
@@ -87,10 +87,10 @@ func (m *LoadBalanceMgr) Get(lbType string) LoadBalancer {
 	return nil
 }
 
-func (m *LoadBalanceMgr) Update(nodes []*Node) {
+func (m *LoadBalanceMgr) Update(node *Node) {
 	for k, v := range m.balancerMap {
 		config.Logger.Info("update lb", zap.String("lb_type", k))
-		v.UpdateNodes(nodes)
+		v.UpdateNode(node)
 	}
 }
 
@@ -98,11 +98,11 @@ func (m *LoadBalanceMgr) runLoop() {
 loop:
 	for {
 		select {
-		case addrs, ok := <-m.addrChan:
+		case node, ok := <-m.addrChan:
 			if !ok {
 				break loop
 			}
-			m.Update(addrs)
+			m.Update(node)
 		case <-m.stopC:
 			break loop
 		}

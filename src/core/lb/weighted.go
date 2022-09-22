@@ -69,12 +69,12 @@ func (lb *weightedRoundRobinLB) UpdateNodes(nodes []*Node) {
 			Effective: n.Weight,
 		}
 		//lb.nodes = append(lb.nodes, wNode)
-		if _wNodeList, existed := lb.nodeMap[n.SvcName]; existed {
-			lb.nodeMap[n.SvcName] = append(_wNodeList, wNode)
+		if _wNodeList, existed := lb.nodeMap[n.Svc]; existed {
+			lb.nodeMap[n.Svc] = append(_wNodeList, wNode)
 		} else {
 			newNodeList := make([]*weightNode, 0, 1)
 			newNodeList = append(newNodeList, wNode)
-			lb.nodeMap[n.SvcName] = newNodeList
+			lb.nodeMap[n.Svc] = newNodeList
 		}
 	}
 }

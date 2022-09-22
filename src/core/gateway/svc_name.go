@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : service.go
+// @File   : svc_name.go
 // @Description:
 // @Date   : 2022/9/12 20:08
 
@@ -17,9 +17,10 @@ var onceMatcher sync.Once
 var Matcher *SvcMatcher
 
 type SvcMatchRule struct {
-	SvcName  string
-	Category int
-	Rule     string
+	Svc       string
+	EventType int
+	Category  int
+	Rule      string
 }
 
 type SvcMatcher struct {
@@ -51,11 +52,11 @@ func (svc *SvcMatcher) Match(host, path string) (string, error) {
 		case dao.SvcCategoryUrlPrefix:
 			// todo 增加正则表达式
 			if strings.HasPrefix(path, entity.Rule) {
-				return entity.SvcName, nil
+				return entity.Svc, nil
 			}
 		case dao.SvcCategoryHost:
 			if host == entity.Rule {
-				return entity.SvcName, nil
+				return entity.Svc, nil
 			}
 		default:
 			//

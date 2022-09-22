@@ -6,13 +6,14 @@
 package lb
 
 type Node struct {
-	SvcName string
-	Addr    string
-	Weight  int64
+	Svc       string
+	EventType int
+	Addr      string
+	Weight    int64
 }
 
 type LoadBalancer interface {
 	// Next 通过一个svcName 获取真实的地址，后面改成不需要参数，
 	Next(string) (string, error)
-	UpdateNodes([]*Node)
+	UpdateNode(*Node)
 }

@@ -40,9 +40,6 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName str
 		// 是否修改host
 		//hosts, err := repo.GetServices(svcName)
 		log.Printf("servicename=%s \n", svcName)
-		//if err != nil {
-		//
-		//} else {
 		host, err := balancer.Next(svcName) // 这里需要返回一个对象，scheme， host都是从这里获取
 		//log.Printf("loadbalance host=%s, error=%v\n", host, err)
 		if err != nil {
@@ -54,8 +51,6 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName str
 			// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
 			req.URL.Path = util.JoinPath("", urlPath)
 		}
-		//}
-
 		if _, ok := req.Header["User-Agent"]; !ok {
 			// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header
 			req.Header.Set("User-Agent", "teddy-api-gateway")

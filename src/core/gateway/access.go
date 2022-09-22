@@ -18,10 +18,11 @@ const (
 )
 
 type AccessConfig struct {
-	BlockIP  []string
-	AllowIP  []string
-	Category int
-	Name     string
+	Name      string
+	EventType int
+	Category  int
+	BlockIP   []string
+	AllowIP   []string
 }
 
 var Access *AccessController
@@ -55,7 +56,7 @@ func NewAccessController() *AccessController {
 
 }
 
-func (ac *AccessController) updateConfig(configs []*AccessConfig) {
+func (ac *AccessController) update(configs []*AccessConfig) {
 	ac.mutex.Lock()
 	defer ac.mutex.Unlock()
 	for _, c := range configs {
@@ -80,7 +81,7 @@ loop:
 			if !ok {
 				break loop
 			}
-			ac.updateConfig(c)
+			ac.update(c)
 		case <-ac.stopC:
 			break loop
 		}

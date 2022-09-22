@@ -11,6 +11,7 @@ gateway:
   httpPort: 9903
   grpcPort: 9904
   timeout: 4000 # 单位ms
+  stripUri: gateway-kit
 hystrix:
 
 ratelimit:

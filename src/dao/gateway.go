@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : service.go
+// @File   : svc_name.go
 // @Description:
 // @Date   : 2022/4/17 8:15 PM
 
@@ -73,10 +73,10 @@ func NewGatewayDao() *GatewayDao {
 	}
 }
 
-func (engine *GatewayDao) GetGateway(ctx context.Context, svc string) (entities []*GatewayEntity, err error) {
+func (engine *GatewayDao) GetByName(ctx context.Context, name string) (entities []*GatewayEntity, err error) {
 	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
 	var cursor *mongo.Cursor
-	cursor, err = engine.Collection().Find(ctx, bson.D{{"name", svc}, {"deleted_at", 0}}, opt)
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"name", name}, {"deleted_at", 0}}, opt)
 	if err != nil {
 		return
 	} else {
@@ -132,6 +132,18 @@ func (engine *GatewayDao) Update(ctx context.Context, _id string, gw *GatewayEnt
 func (engine *GatewayDao) All(ctx context.Context) (entities []*GatewayEntity, err error) {
 	var cursor *mongo.Cursor
 	cursor, err = engine.Collection().Find(ctx, bson.D{{"deleted_at", 0}})
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
+	}
+}
+
+func (engine *GatewayDao) ChangeFrom(ctx context.Context, t time.Time) (entities []*GatewayEntity, err error) {
+	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"updated_at", bson.M{"$gt": t}}}, opt)
 	if err != nil {
 		return
 	} else {

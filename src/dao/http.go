@@ -32,7 +32,7 @@ type HttpSvcEntity struct {
 	ID             *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name           string              `json:"name" bson:"name"` //http服务，
 	Description    string              `json:"description" bson:"description"`
-	Addrs          []string            `json:"addrs" bson:"addrs"` // k8s 系统才使用,其他时候从服务发现中获取
+	Addr           string              `json:"addr" bson:"addr"` // k8s 系统才使用,其他时候从服务发现中获取
 	BlockList      []string            `json:"block_list" bson:"block_list"`
 	AllowList      []string            `json:"allow_list" bson:"allow_list"`
 	ClientQps      int                 `json:"client_qps" bson:"client_qps"`                                             // 客户端流量控制
@@ -115,16 +115,16 @@ func (engine *HttpSvcDao) GetByID(ctx context.Context, id string) (entity *HttpS
 	}
 }
 
-func (engine *HttpSvcDao) Delete(ctx context.Context, _id string) error {
-	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
-		return err
-	} else {
-		if _, err2 := engine.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
-			return err2
-		}
-		return nil
-	}
-}
+//func (engine *HttpSvcDao) Delete(ctx context.Context, _id string) error {
+//	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
+//		return err
+//	} else {
+//		if _, err2 := engine.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
+//			return err2
+//		}
+//		return nil
+//	}
+//}
 
 func (engine *HttpSvcDao) Insert(ctx context.Context, svc *HttpSvcEntity) (*HttpSvcEntity, error) {
 	svc.CreatedAt = time.Now()
@@ -147,7 +147,6 @@ func (engine *HttpSvcDao) Update(ctx context.Context, _id string, svc *HttpSvcEn
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return svc, err
 	} else {
-
 		ret, err := engine.Collection().UpdateByID(ctx, objID, svc, options.Update().SetUpsert(false))
 		if err != nil {
 			return svc, err
@@ -155,6 +154,17 @@ func (engine *HttpSvcDao) Update(ctx context.Context, _id string, svc *HttpSvcEn
 			config.Logger.Info("update ", zap.String("_id", _id), zap.Int64("count", ret.ModifiedCount))
 			return svc, nil
 		}
+	}
+}
 
+func (engine *HttpSvcDao) ChangeFrom(ctx context.Context, t time.Time) (entities []*HttpSvcEntity, err error) {
+	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx, bson.D{{"updated_at", bson.M{"$gt": t}}}, opt)
+	if err != nil {
+		return
+	} else {
+		err = cursor.All(ctx, &entities)
+		return
 	}
 }

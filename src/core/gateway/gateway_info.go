@@ -16,16 +16,16 @@ var GwConfigure *GWConfig
 type GWConfig struct {
 	mutex      sync.RWMutex
 	stopC      chan struct{}
-	gwChan     chan *dao.GatewayEntity
-	accessChan chan []*AccessConfig
+	gwChan     chan *dao.GwEvent
+	accessChan chan *AccessConfig
 }
 
-func NewGwConfig(accessChan chan []*AccessConfig) *GWConfig {
+func NewGwConfig(accessChan chan *AccessConfig) *GWConfig {
 	onceGwConfig.Do(func() {
 		GwConfigure = &GWConfig{
 			mutex:      sync.RWMutex{},
 			stopC:      make(chan struct{}),
-			gwChan:     make(chan *dao.GatewayEntity),
+			gwChan:     make(chan *dao.GwEvent),
 			accessChan: accessChan,
 		}
 		GwConfigure.Start()
@@ -33,7 +33,7 @@ func NewGwConfig(accessChan chan []*AccessConfig) *GWConfig {
 	return GwConfigure
 }
 
-func (configure *GWConfig) In() chan *dao.GatewayEntity {
+func (configure *GWConfig) In() chan *dao.GwEvent {
 	return configure.gwChan
 }
 func (configure *GWConfig) Start() {
@@ -43,17 +43,20 @@ func (configure *GWConfig) Start() {
 			select {
 			case <-configure.stopC:
 				break loop
-			case entity, ok := <-configure.gwChan:
+			case event, ok := <-configure.gwChan:
 				if !ok {
 					break loop
 				}
-				accessConfig := &AccessConfig{
-					BlockIP:  entity.BlockList,
-					AllowIP:  entity.AllowList,
-					Name:     entity.Name,
-					Category: ACCESS_CONTROL_GATEWAY,
+				for _, entity := range event.Entities {
+					accessConfig := &AccessConfig{
+						EventType: event.EventType,
+						BlockIP:   entity.BlockList,
+						AllowIP:   entity.AllowList,
+						Name:      entity.Name,
+						Category:  ACCESS_CONTROL_GATEWAY,
+					}
+					configure.accessChan <- accessConfig
 				}
-				configure.accessChan <- []*AccessConfig{accessConfig}
 			}
 		}
 	}()
