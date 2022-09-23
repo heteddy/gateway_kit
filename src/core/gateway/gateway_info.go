@@ -33,7 +33,7 @@ func NewGwConfig(accessChan chan<- *AccessConfig) *GWConfig {
 	return GwConfigure
 }
 
-func (configure *GWConfig) In() chan *dao.GwEvent {
+func (configure *GWConfig) In() chan<- *dao.GwEvent {
 	return configure.gwChan
 }
 func (configure *GWConfig) Start() {

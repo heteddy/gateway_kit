@@ -103,6 +103,6 @@ func (repo *HttpServiceRepo) Stop() {
 	close(repo.accessChan)
 }
 
-func (repo *HttpServiceRepo) In() chan *dao.SvcEvent {
+func (repo *HttpServiceRepo) In() chan<- *dao.SvcEvent {
 	return repo.svcChan
 }

@@ -22,7 +22,7 @@ type PollingDiscovery struct {
 	gwDao  *dao.GatewayDao
 	*util.TickerSvc
 	svcChan   chan<- *dao.SvcEvent
-	gwChan    chan *dao.GwEvent
+	gwChan    chan<- *dao.GwEvent
 	gwInfo    *dao.GatewayEntity
 	pollingAt *time.Time
 	//mutex       sync.RWMutex
@@ -30,7 +30,7 @@ type PollingDiscovery struct {
 	//svcEntityMap map[string][]*dao.HttpSvcEntity // 以后放到redis，目前
 }
 
-func NewPollingDiscovery(svcChan chan *dao.SvcEvent, gwChan chan *dao.GwEvent) *PollingDiscovery {
+func NewPollingDiscovery(svcChan chan<- *dao.SvcEvent, gwChan chan<- *dao.GwEvent) *PollingDiscovery {
 	proxy := &PollingDiscovery{
 		svcDao:    dao.NewHttpSvcDao(),
 		gwDao:     dao.NewGatewayDao(),
