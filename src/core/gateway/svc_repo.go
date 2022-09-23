@@ -24,21 +24,27 @@ type HttpServiceRepo struct { //支持watch？
 	// 接收服务发现的事件
 	svcChan chan *dao.SvcEvent
 	// 通知变更或者删除等
-	addrChan       chan *lb.Node
-	accessChan     chan *AccessConfig
-	svcMatcherChan chan *SvcMatchRule
+	addrChan       chan<- *lb.Node
+	accessChan     chan<- *AccessConfig
+	svcMatcherChan chan<- *SvcMatchRule
+	rateChan       chan<- *RateLimitConfig
 	stopC          chan struct{}
 	//entities   []*dao.HttpSvcEntity
 	//mutex      sync.RWMutex
 }
 
-func NewServiceRepo(addrC chan *lb.Node, accessC chan *AccessConfig, matcherC chan *SvcMatchRule) *HttpServiceRepo {
+func NewServiceRepo(
+	addrC chan<- *lb.Node,
+	accessC chan<- *AccessConfig,
+	matcherC chan<- *SvcMatchRule,
+	rateC chan<- *RateLimitConfig) *HttpServiceRepo {
 	onceRepo.Do(func() {
 		RepoHttp = &HttpServiceRepo{
 			svcChan:        make(chan *dao.SvcEvent),
 			addrChan:       addrC,
 			accessChan:     accessC,
 			svcMatcherChan: matcherC,
+			rateChan:       rateC,
 			stopC:          make(chan struct{}),
 			//entities:   make([]*dao.HttpSvcEntity, 0, 1),
 			//mutex:      sync.RWMutex{},
@@ -79,6 +85,11 @@ func (repo *HttpServiceRepo) Start() {
 						Svc:       entity.Name,
 						Category:  entity.Category,
 						Rule:      entity.MatchRule,
+					}
+					repo.rateChan <- &RateLimitConfig{
+						EventType: event.EventType,
+						Svc:       entity.Name,
+						SvcQps:    entity.ServerQps,
 					}
 				}
 			}

@@ -22,7 +22,7 @@ type HttpSvcRequest struct {
 	Description    string   `json:"description" binding:"required" validator:"min=0,max=120"` //描述
 	BlockList      []string `json:"block_list" binding:"required"`                            // 网关黑名单，所有的服务通用
 	AllowList      []string `json:"allow_list" binding:"required"`
-	Addrs          []string `json:"addrs" binding:"required" validator:"min=1"`
+	Addr           string   `json:"addr" binding:"required" validator:"min=1"`
 	ClientQps      int      `json:"client_qps" binding:"required" validator:"min=1"` // 客户端流量控制
 	ServerQps      int      `json:"server_qps" binding:"required" validator:"min=1"` // 服务端流量控制
 	Category       int      `json:"category"  binding:"required" `                   // 如果gateway绑定多个域名，可以通过访问的host，来进行重定向
@@ -96,7 +96,7 @@ func (ctrl *httpSvcCtrl) Create(c *gin.Context) {
 		Description:    req.Description,
 		BlockList:      req.BlockList,
 		AllowList:      req.AllowList,
-		Addr:           req.Addrs,
+		Addr:           req.Addr,
 		ClientQps:      req.ClientQps,
 		ServerQps:      req.ServerQps,
 		Category:       req.Category,
@@ -141,7 +141,7 @@ func (ctrl *httpSvcCtrl) Update(c *gin.Context) {
 		Description:    req.Description,
 		BlockList:      req.BlockList,
 		AllowList:      req.AllowList,
-		Addr:           req.Addrs,
+		Addr:           req.Addr,
 		ClientQps:      req.ClientQps,
 		ServerQps:      req.ServerQps,
 		Category:       req.Category,

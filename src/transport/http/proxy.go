@@ -40,7 +40,7 @@ func MakeProxyHandler() *gin.Engine {
 		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.ServiceNameMiddleware(),
 		middleware.IPFilterMiddleware(),
-		middleware.RateLimiter(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 		middleware.ReverseProxyMiddleware(lb.NewLoadBalanceMgr()),
 	)
 

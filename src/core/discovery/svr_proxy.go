@@ -127,11 +127,11 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 
 		} else {
 			delEvent := &dao.GwEvent{
-				EventType: EventDelete,
+				EventType: dao.EventDelete,
 				Entities:  make([]*dao.GatewayEntity, 0),
 			}
 			updateEvent := &dao.GwEvent{
-				EventType: EventUpdate,
+				EventType: dao.EventUpdate,
 				Entities:  make([]*dao.GatewayEntity, 0),
 			}
 			for _, gw := range gws {

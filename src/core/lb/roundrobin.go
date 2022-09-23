@@ -39,18 +39,18 @@ func (lb *roundRobin) Next(svc string) (string, error) {
 	}
 }
 
-func (lb *roundRobin) UpdateNodes(nodes []*Node) {
+func (lb *roundRobin) UpdateNode(nodes *Node) {
 	lb.mutex.Lock()
 	defer lb.mutex.Unlock()
 
-	for _, n := range nodes {
-		if nodeList, existed := lb.nodeMap[n.Svc]; existed {
-			lb.nodeMap[n.Svc] = append(nodeList, n)
-		} else {
-			newNodeList := make([]*Node, 0, 1)
-			newNodeList = append(newNodeList, n)
-			lb.nodeMap[n.Svc] = newNodeList
-			lb.svcIndex[n.Svc] = 0
-		}
-	}
+	//for _, n := range nodes {
+	//	if nodeList, existed := lb.nodeMap[n.Svc]; existed {
+	//		lb.nodeMap[n.Svc] = append(nodeList, n)
+	//	} else {
+	//		newNodeList := make([]*Node, 0, 1)
+	//		newNodeList = append(newNodeList, n)
+	//		lb.nodeMap[n.Svc] = newNodeList
+	//		lb.svcIndex[n.Svc] = 0
+	//	}
+	//}
 }

@@ -26,10 +26,8 @@ definitions:
     type: object
   endpoint.HttpSvcRequest:
     properties:
-      addrs:
-        items:
-          type: string
-        type: array
+      addr:
+        type: string
       allow_list:
         items:
           type: string
@@ -78,7 +76,7 @@ definitions:
           type: string
         type: array
     required:
-    - addrs
+    - addr
     - allow_list
     - block_list
     - category

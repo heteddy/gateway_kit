@@ -7,6 +7,7 @@ package gateway
 
 import (
 	"gateway_kit/config"
+	"gateway_kit/dao"
 	"gateway_kit/util"
 	"go.uber.org/zap"
 	"sync"
@@ -35,7 +36,7 @@ type AccessController struct {
 	gwBlockIP  []string
 	gwAllowIP  []string
 
-	accessChan chan []*AccessConfig
+	accessChan chan *AccessConfig
 	stopC      chan struct{}
 }
 
@@ -47,7 +48,7 @@ func NewAccessController() *AccessController {
 			svcAllowIP: make(map[string][]string),
 			gwBlockIP:  nil,
 			gwAllowIP:  nil,
-			accessChan: make(chan []*AccessConfig),
+			accessChan: make(chan *AccessConfig),
 			stopC:      make(chan struct{}),
 		}
 		Access.Start()
@@ -56,20 +57,25 @@ func NewAccessController() *AccessController {
 
 }
 
-func (ac *AccessController) update(configs []*AccessConfig) {
+func (ac *AccessController) update(c *AccessConfig) {
 	ac.mutex.Lock()
 	defer ac.mutex.Unlock()
-	for _, c := range configs {
-		switch c.Category {
-		case ACCESS_CONTROL_GATEWAY: // gateway 只可能有一个
-			ac.gwAllowIP = c.AllowIP
-			ac.gwBlockIP = c.BlockIP
-		case ACCESS_CONTROL_SERVICE:
+	switch c.Category {
+	case ACCESS_CONTROL_GATEWAY: // gateway 只可能有一个
+		// gateway不支持删除
+		ac.gwAllowIP = c.AllowIP
+		ac.gwBlockIP = c.BlockIP
+	case ACCESS_CONTROL_SERVICE:
+		if c.EventType == dao.EventDelete {
+			delete(ac.svcAllowIP, c.Name)
+			delete(ac.svcBlockIP, c.Name)
+		} else {
 			ac.svcAllowIP[c.Name] = c.AllowIP
 			ac.svcBlockIP[c.Name] = c.BlockIP
-		default:
-			config.Logger.Warn("receiving error category", zap.Int("category", c.Category))
 		}
+
+	default:
+		config.Logger.Warn("receiving error category", zap.Int("category", c.Category))
 	}
 }
 
@@ -92,7 +98,7 @@ func (ac *AccessController) Start() {
 	go ac.runLoop()
 }
 
-func (ac *AccessController) In() chan []*AccessConfig {
+func (ac *AccessController) In() chan<- *AccessConfig {
 	return ac.accessChan
 }
 

@@ -17,10 +17,10 @@ type GWConfig struct {
 	mutex      sync.RWMutex
 	stopC      chan struct{}
 	gwChan     chan *dao.GwEvent
-	accessChan chan *AccessConfig
+	accessChan chan<- *AccessConfig
 }
 
-func NewGwConfig(accessChan chan *AccessConfig) *GWConfig {
+func NewGwConfig(accessChan chan<- *AccessConfig) *GWConfig {
 	onceGwConfig.Do(func() {
 		GwConfigure = &GWConfig{
 			mutex:      sync.RWMutex{},

@@ -315,7 +315,7 @@ var doc = `{
         "endpoint.HttpSvcRequest": {
             "type": "object",
             "required": [
-                "addrs",
+                "addr",
                 "allow_list",
                 "block_list",
                 "category",
@@ -331,11 +331,8 @@ var doc = `{
                 "url_rewrite"
             ],
             "properties": {
-                "addrs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
+                "addr": {
+                    "type": "string"
                 },
                 "allow_list": {
                     "type": "array",

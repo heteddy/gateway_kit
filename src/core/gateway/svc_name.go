@@ -27,7 +27,7 @@ type SvcMatcher struct {
 	mutex    sync.RWMutex
 	svcRules []*SvcMatchRule
 	stopC    chan struct{}
-	ruleC    chan []*SvcMatchRule
+	ruleC    chan *SvcMatchRule
 }
 
 func NewSvcMatcher() *SvcMatcher {
@@ -36,7 +36,7 @@ func NewSvcMatcher() *SvcMatcher {
 			mutex:    sync.RWMutex{},
 			svcRules: nil,
 			stopC:    make(chan struct{}),
-			ruleC:    make(chan []*SvcMatchRule),
+			ruleC:    make(chan *SvcMatchRule),
 		}
 		Matcher.Start()
 
@@ -69,18 +69,27 @@ func (svc *SvcMatcher) Match(host, path string) (string, error) {
 	return "", errors.New("service not found")
 }
 
-func (svc *SvcMatcher) In() chan []*SvcMatchRule {
+func (svc *SvcMatcher) In() chan<- *SvcMatchRule {
 	return svc.ruleC
 }
 func (svc *SvcMatcher) runLoop() {
 loop:
 	for {
 		select {
-		case rules, ok := <-svc.ruleC:
+		case rule, ok := <-svc.ruleC:
 			if !ok {
 				break loop
 			}
-			svc.svcRules = rules
+			if rule.EventType == dao.EventDelete {
+				for idx, r := range svc.svcRules {
+					if r.Svc == rule.Svc {
+						svc.svcRules = append(svc.svcRules[0:idx], svc.svcRules[idx+1:]...)
+						break
+					}
+				}
+			} else {
+				svc.svcRules = append(svc.svcRules, rule)
+			}
 		case <-svc.stopC:
 			break loop
 		}

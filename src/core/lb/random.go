@@ -31,9 +31,19 @@ func (lb *randomLB) UpdateNode(node *Node) {
 	// service name 存在
 	if _nodes, existed := lb.serviceAddrs[node.Svc]; existed {
 		if node.EventType == dao.EventDelete {
-			for
+			// delete service nodes
+		loop:
+			for idx, n := range _nodes {
+				if n.Addr == node.Addr {
+					_addrList := append(_nodes[0:idx], _nodes[idx+1:]...)
+					lb.serviceAddrs[node.Svc] = _addrList
+					break loop
+				}
+			}
+		} else {
+			_addrList := append(_nodes, node)
+			lb.serviceAddrs[node.Svc] = _addrList
 		}
-		lb.serviceAddrs[node.Svc] = append(_nodes, node)
 	} else {
 		newNodes := make([]*Node, 1, 1)
 		newNodes[0] = node
