@@ -14,7 +14,7 @@ import (
 var onceLimiter sync.Once
 var Limiter *RateLimiter
 
-type RateLimitConfig struct {
+type RateLimitConfigEvent struct {
 	EventType int
 	Svc       string
 	SvcQps    int
@@ -22,8 +22,8 @@ type RateLimitConfig struct {
 type RateLimiter struct {
 	mutex      sync.RWMutex
 	stopC      chan struct{}
-	configC    chan *RateLimitConfig
-	svcQps     map[string]*RateLimitConfig
+	configC    chan *RateLimitConfigEvent
+	svcQps     map[string]*RateLimitConfigEvent
 	svcLimiter map[string]*rate.Limiter // 针对每个服务创建一个limiter，这里limiter需要改成基于redis
 }
 
@@ -32,15 +32,15 @@ func NewRateLimiter() *RateLimiter {
 		Limiter = &RateLimiter{
 			mutex:      sync.RWMutex{},
 			stopC:      make(chan struct{}),
-			configC:    make(chan *RateLimitConfig),
-			svcQps:     make(map[string]*RateLimitConfig),
+			configC:    make(chan *RateLimitConfigEvent),
+			svcQps:     make(map[string]*RateLimitConfigEvent),
 			svcLimiter: make(map[string]*rate.Limiter),
 		}
 	})
 	return Limiter
 }
 
-func (rl *RateLimiter) update(c *RateLimitConfig) {
+func (rl *RateLimiter) update(c *RateLimitConfigEvent) {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
 	if c.EventType == dao.EventDelete {
@@ -74,7 +74,7 @@ func (rl *RateLimiter) Start() {
 func (rl *RateLimiter) Stop() {
 	close(rl.stopC)
 }
-func (rl *RateLimiter) In() chan<- *RateLimitConfig {
+func (rl *RateLimiter) In() chan<- *RateLimitConfigEvent {
 	return rl.configC
 }
 

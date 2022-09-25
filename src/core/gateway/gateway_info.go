@@ -11,18 +11,18 @@ import (
 )
 
 var onceGwConfig sync.Once
-var GwConfigure *GWConfig
+var GwConfigure *GWController
 
-type GWConfig struct {
+type GWController struct {
 	mutex      sync.RWMutex
 	stopC      chan struct{}
 	gwChan     chan *dao.GwEvent
-	accessChan chan<- *AccessConfig
+	accessChan chan<- *AccessConfigEvt
 }
 
-func NewGwConfig(accessChan chan<- *AccessConfig) *GWConfig {
+func NewGwController(accessChan chan<- *AccessConfigEvt) *GWController {
 	onceGwConfig.Do(func() {
-		GwConfigure = &GWConfig{
+		GwConfigure = &GWController{
 			mutex:      sync.RWMutex{},
 			stopC:      make(chan struct{}),
 			gwChan:     make(chan *dao.GwEvent),
@@ -33,10 +33,10 @@ func NewGwConfig(accessChan chan<- *AccessConfig) *GWConfig {
 	return GwConfigure
 }
 
-func (configure *GWConfig) In() chan<- *dao.GwEvent {
+func (configure *GWController) In() chan<- *dao.GwEvent {
 	return configure.gwChan
 }
-func (configure *GWConfig) Start() {
+func (configure *GWController) Start() {
 	go func() {
 	loop:
 		for {
@@ -48,7 +48,7 @@ func (configure *GWConfig) Start() {
 					break loop
 				}
 				for _, entity := range event.Entities {
-					accessConfig := &AccessConfig{
+					accessConfig := &AccessConfigEvt{
 						EventType: event.EventType,
 						BlockIP:   entity.BlockList,
 						AllowIP:   entity.AllowList,
@@ -62,6 +62,6 @@ func (configure *GWConfig) Start() {
 	}()
 }
 
-func (configure *GWConfig) Stop() {
+func (configure *GWController) Stop() {
 	close(configure.stopC)
 }

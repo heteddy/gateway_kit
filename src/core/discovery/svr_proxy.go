@@ -7,8 +7,11 @@ package discovery
 
 import (
 	"context"
+	"fmt"
+	"gateway_kit/config"
 	"gateway_kit/dao"
 	"gateway_kit/util"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -34,7 +37,7 @@ func NewPollingDiscovery(svcChan chan<- *dao.SvcEvent, gwChan chan<- *dao.GwEven
 	proxy := &PollingDiscovery{
 		svcDao:    dao.NewHttpSvcDao(),
 		gwDao:     dao.NewGatewayDao(),
-		TickerSvc: util.NewTickerSvc("service-discovery", time.Minute, false),
+		TickerSvc: util.NewTickerSvc("service-discovery", time.Minute*1, true),
 		svcChan:   svcChan,
 		gwChan:    gwChan,
 		pollingAt: nil,
@@ -42,8 +45,12 @@ func NewPollingDiscovery(svcChan chan<- *dao.SvcEvent, gwChan chan<- *dao.GwEven
 		//svcEntityMap: make(map[string][]*dao.HttpSvcEntity),
 		//mutex:       sync.RWMutex{},
 	}
-	proxy.Start(proxy.endpoint())
+
 	return proxy
+}
+
+func (pd *PollingDiscovery) Start() {
+	pd.TickerSvc.Start(pd.endpoint())
 }
 
 func (pd *PollingDiscovery) loadServices() ([]*dao.HttpSvcEntity, error) {
@@ -64,6 +71,7 @@ func (pd *PollingDiscovery) loadGateway() ([]*dao.GatewayEntity, error) {
 
 func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 	return func() {
+		fmt.Printf("PollingDiscovery endpoint running\n")
 		//entities, err := pd.svcDao.All(context.Background())
 		//if err != nil {
 		//	config.Logger.Error("load service entities error", zap.Error(err))
@@ -98,7 +106,7 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 		//	}
 		//}
 		if svcs, err1 := pd.loadServices(); err1 != nil {
-
+			config.Logger.Error("load service info error", zap.Error(err1))
 		} else {
 			delEvents := &dao.SvcEvent{
 				EventType: dao.EventDelete,
@@ -108,7 +116,11 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 				EventType: dao.EventUpdate,
 				Entities:  make([]*dao.HttpSvcEntity, 0),
 			}
+			if len(svcs) == 0 {
+				config.Logger.Info("no svc updated found")
+			}
 			for _, svc := range svcs {
+				config.Logger.Info("service info", zap.Any("service", svc))
 				if svc.DeletedAt > 0 {
 					delEvents.Entities = append(delEvents.Entities, svc)
 				} else {
@@ -124,8 +136,11 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 		}
 
 		if gws, err2 := pd.loadGateway(); err2 != nil {
-
+			config.Logger.Error("load gateway info error", zap.Error(err2))
 		} else {
+			if len(gws) == 0 {
+				config.Logger.Info("no gateways updated found")
+			}
 			delEvent := &dao.GwEvent{
 				EventType: dao.EventDelete,
 				Entities:  make([]*dao.GatewayEntity, 0),
@@ -135,6 +150,7 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 				Entities:  make([]*dao.GatewayEntity, 0),
 			}
 			for _, gw := range gws {
+				config.Logger.Info("gateway info", zap.Any("gateway", gw))
 				if gw.DeletedAt > 0 {
 					delEvent.Entities = append(delEvent.Entities, gw)
 				} else {

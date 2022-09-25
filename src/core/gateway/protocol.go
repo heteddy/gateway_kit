@@ -10,37 +10,37 @@ import (
 	"sync"
 )
 
-var ProtoTrans *ProtocolTrans
+var ProtoTrans *ProtocolTransCtrl
 var onceProto sync.Once
 
-type ProtocolSupported struct {
+type ProtocolSupportedEvt struct {
 	EventType   int
 	Svc         string
 	IsHttps     bool `json:"need_https"  description:"type=支持https 1=支持"`
 	IsWebsocket bool `json:"need_websocket" description:"启用websocket 1=启用"`
 }
 
-type ProtocolTrans struct {
+type ProtocolTransCtrl struct {
 	mutex        sync.RWMutex
-	svcProtocols map[string]*ProtocolSupported
+	svcProtocols map[string]*ProtocolSupportedEvt
 
-	protoChan chan *ProtocolSupported
+	protoChan chan *ProtocolSupportedEvt
 	stopC     chan struct{}
 }
 
-func NewProtocolTrans() *ProtocolTrans {
+func NewProtocolTransCtrl() *ProtocolTransCtrl {
 	onceProto.Do(func() {
-		ProtoTrans = &ProtocolTrans{
+		ProtoTrans = &ProtocolTransCtrl{
 			mutex:        sync.RWMutex{},
-			svcProtocols: make(map[string]*ProtocolSupported),
-			protoChan:    make(chan *ProtocolSupported),
+			svcProtocols: make(map[string]*ProtocolSupportedEvt),
+			protoChan:    make(chan *ProtocolSupportedEvt),
 			stopC:        make(chan struct{}),
 		}
 	})
 	return ProtoTrans
 }
 
-func (proto *ProtocolTrans) runLoop() {
+func (proto *ProtocolTransCtrl) runLoop() {
 loop:
 	for {
 		select {
@@ -54,19 +54,19 @@ loop:
 		}
 	}
 }
-func (proto *ProtocolTrans) Start() {
+func (proto *ProtocolTransCtrl) Start() {
 	go proto.runLoop()
 }
 
-func (proto *ProtocolTrans) In() chan<- *ProtocolSupported {
+func (proto *ProtocolTransCtrl) In() chan<- *ProtocolSupportedEvt {
 	return proto.protoChan
 }
 
-func (proto *ProtocolTrans) Stop() {
+func (proto *ProtocolTransCtrl) Stop() {
 	close(proto.stopC)
 }
 
-func (proto *ProtocolTrans) update(protocol *ProtocolSupported) {
+func (proto *ProtocolTransCtrl) update(protocol *ProtocolSupportedEvt) {
 	proto.mutex.Lock()
 	defer proto.mutex.Unlock()
 
@@ -78,7 +78,7 @@ func (proto *ProtocolTrans) update(protocol *ProtocolSupported) {
 	}
 }
 
-func (proto *ProtocolTrans) IsHttps(name string) bool {
+func (proto *ProtocolTransCtrl) IsHttps(name string) bool {
 	proto.mutex.RLock()
 	defer proto.mutex.RUnlock()
 	if p, existed := proto.svcProtocols[name]; existed {
@@ -87,7 +87,7 @@ func (proto *ProtocolTrans) IsHttps(name string) bool {
 	return false
 }
 
-func (proto *ProtocolTrans) IsWebsocket(name string) bool {
+func (proto *ProtocolTransCtrl) IsWebsocket(name string) bool {
 	proto.mutex.RLock()
 	defer proto.mutex.RUnlock()
 	if p, existed := proto.svcProtocols[name]; existed {

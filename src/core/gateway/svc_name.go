@@ -23,6 +23,27 @@ type SvcMatchRule struct {
 	Rule      string
 }
 
+func (r SvcMatchRule) Match(host, path string) bool {
+	switch r.Category {
+	case dao.SvcCategoryUrlPrefix:
+		// todo 增加正则表达式
+		if strings.HasPrefix(path, r.Rule) {
+			return true
+		}
+	case dao.SvcCategoryHost:
+		if host == r.Rule {
+			return true
+		}
+	default:
+		//
+		config.Logger.Warn(
+			"error of rule category",
+		)
+
+	}
+	return false
+}
+
 type SvcMatcher struct {
 	mutex    sync.RWMutex
 	svcRules []*SvcMatchRule
@@ -48,22 +69,8 @@ func (svc *SvcMatcher) Match(host, path string) (string, error) {
 	svc.mutex.RLock()
 	defer svc.mutex.RUnlock()
 	for _, entity := range svc.svcRules {
-		switch entity.Category {
-		case dao.SvcCategoryUrlPrefix:
-			// todo 增加正则表达式
-			if strings.HasPrefix(path, entity.Rule) {
-				return entity.Svc, nil
-			}
-		case dao.SvcCategoryHost:
-			if host == entity.Rule {
-				return entity.Svc, nil
-			}
-		default:
-			//
-			config.Logger.Warn(
-				"error of entity category",
-			)
-
+		if entity.Match(host, path) {
+			return entity.Svc, nil
 		}
 	}
 	return "", errors.New("service not found")

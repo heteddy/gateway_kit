@@ -18,7 +18,7 @@ const (
 	ACCESS_CONTROL_SERVICE
 )
 
-type AccessConfig struct {
+type AccessConfigEvt struct {
 	Name      string
 	EventType int
 	Category  int
@@ -36,7 +36,7 @@ type AccessController struct {
 	gwBlockIP  []string
 	gwAllowIP  []string
 
-	accessChan chan *AccessConfig
+	accessChan chan *AccessConfigEvt
 	stopC      chan struct{}
 }
 
@@ -48,7 +48,7 @@ func NewAccessController() *AccessController {
 			svcAllowIP: make(map[string][]string),
 			gwBlockIP:  nil,
 			gwAllowIP:  nil,
-			accessChan: make(chan *AccessConfig),
+			accessChan: make(chan *AccessConfigEvt),
 			stopC:      make(chan struct{}),
 		}
 		Access.Start()
@@ -57,7 +57,7 @@ func NewAccessController() *AccessController {
 
 }
 
-func (ac *AccessController) update(c *AccessConfig) {
+func (ac *AccessController) update(c *AccessConfigEvt) {
 	ac.mutex.Lock()
 	defer ac.mutex.Unlock()
 	switch c.Category {
@@ -98,7 +98,7 @@ func (ac *AccessController) Start() {
 	go ac.runLoop()
 }
 
-func (ac *AccessController) In() chan<- *AccessConfig {
+func (ac *AccessController) In() chan<- *AccessConfigEvt {
 	return ac.accessChan
 }
 

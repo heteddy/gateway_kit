@@ -148,7 +148,7 @@ func startServer() {
 		// 通过配置获取负载均衡策略
 		// note 暂时hardcode
 		//reverse := builder.BuildHttpProxy(balancer)
-		core.InitCore()
+		core.Start()
 		handler := transportHttp.MakeProxyHandler() // 基于gin的engine，把reverseproxy包装到里面
 		proxySvr := &http.Server{
 			Addr:           ":" + config.All.Gateway.HttpPort,

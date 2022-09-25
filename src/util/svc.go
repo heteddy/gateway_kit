@@ -7,6 +7,7 @@ package util
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"sync"
@@ -84,22 +85,25 @@ func (s *TickerSvc) Trigger() {
 }
 
 func (s *TickerSvc) Start(endpoint SvcEndpoint) {
-	if s.runAtOnce {
-		s.wg.Add(1)
-		go func() {
-			defer func() {
-				s.wg.Done()
-			}()
-			endpoint()
-		}()
-
-	}
+	fmt.Printf("task name: %s starting...\n", s.Svc.name)
+	//if s.runAtOnce {
+	//	s.wg.Add(1)
+	//	go func() {
+	//		defer func() {
+	//			s.wg.Done()
+	//		}()
+	//		endpoint()
+	//	}()
+	//
+	//}
 	s.wg.Add(1)
 	go func() {
 		defer func() {
 			s.wg.Done()
 			s.ticker.Stop()
+			fmt.Printf("task name: %s exit...\n", s.Svc.name)
 		}()
+		fmt.Printf("task name: %s running...\n", s.Svc.name)
 	loop:
 		for {
 			select {
@@ -112,5 +116,9 @@ func (s *TickerSvc) Start(endpoint SvcEndpoint) {
 			}
 		}
 	}()
+	if s.runAtOnce {
+		fmt.Printf("立即执行 task name: %s\n", s.Svc.name)
+		s.Trigger()
+	}
 	s.wait()
 }
