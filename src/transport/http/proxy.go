@@ -41,6 +41,7 @@ func MakeProxyHandler() *gin.Engine {
 		middleware.ServiceNameMiddleware(),
 		middleware.IPFilterMiddleware(),
 		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		middleware.ProtocolMiddleware(),
 		middleware.ReverseProxyMiddleware(lb.NewLoadBalanceMgr()),
 	)
 

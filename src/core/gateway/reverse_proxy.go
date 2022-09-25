@@ -29,7 +29,7 @@ func NewProxyBuilder() *ProxyBuilder {
 	}
 }
 
-func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName string) func(req *http.Request) {
+func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName, scheme string) func(req *http.Request) {
 	return func(req *http.Request) {
 		// 随机选择一个url
 		// note api gateway的功能： url 改写 rewrite
@@ -46,7 +46,7 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName str
 
 		} else {
 			// 是否修改scheme
-			req.URL.Scheme = "http" // 通过配置获取scheme；是否可以转换https-> http wss->ws
+			req.URL.Scheme = scheme // 通过配置获取scheme；是否可以转换https-> http wss->ws
 			req.URL.Host = host
 			// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
 			req.URL.Path = util.JoinPath("", urlPath)
@@ -105,9 +105,9 @@ func (builder *ProxyBuilder) BuildErrorHandler() func(http.ResponseWriter, *http
 	}
 }
 
-func (builder *ProxyBuilder) BuildHttpProxy(balancer lb.LoadBalancer, svcName string) *httputil.ReverseProxy {
+func (builder *ProxyBuilder) BuildHttpProxy(balancer lb.LoadBalancer, svcName, scheme string) *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
-		Director:       builder.BuildDirector(balancer, svcName),
+		Director:       builder.BuildDirector(balancer, svcName, scheme),
 		Transport:      builder.transports.Get(svcName),
 		ModifyResponse: builder.BuildModifier(),
 		ErrorHandler:   builder.BuildErrorHandler(),

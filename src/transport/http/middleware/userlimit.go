@@ -5,5 +5,5 @@
 
 package middleware
 
-// 按照用户限流
+// 按照用户限流，需要基于jwt解出来用户id
 //

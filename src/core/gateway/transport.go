@@ -48,7 +48,7 @@ func (tp *TransportPool) Get(svcName string) *http.Transport {
 			}).DialContext,
 			ForceAttemptHTTP2:     true,
 			MaxIdleConns:          50,
-			IdleConnTimeout:       time.Duration(60) * time.Second,
+			IdleConnTimeout:       time.Duration(300) * time.Second,
 			TLSHandshakeTimeout:   10 * time.Second,
 			ResponseHeaderTimeout: time.Duration(3) * time.Second,
 		}

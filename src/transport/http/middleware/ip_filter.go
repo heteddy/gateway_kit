@@ -15,7 +15,7 @@ func IPFilterMiddleware() gin.HandlerFunc {
 	filterHandler := gateway.NewAccessController()
 	return func(c *gin.Context) {
 		ip := c.ClientIP()
-		if svc, existed := c.Get(GwServiceName); existed {
+		if svc, existed := c.Get(KeyGwSvcName); existed {
 			svcName := svc.(string)
 			if filterHandler.IsAllowed(svcName, ip) {
 				c.Next()

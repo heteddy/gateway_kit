@@ -18,7 +18,7 @@ func RateLimiteMiddleware(limit float64, burst int) gin.HandlerFunc {
 	sysLimiter := rate.NewLimiter(rate.Limit(limit), burst)
 	svcLimiter := gateway.NewRateLimiter()
 	return func(c *gin.Context) {
-		if svc, existed := c.Get(GwServiceName); !existed {
+		if svc, existed := c.Get(KeyGwSvcName); !existed {
 			// 这里不应该不存在，因为service中间件应该会拒绝掉
 			c.Abort()
 		} else {

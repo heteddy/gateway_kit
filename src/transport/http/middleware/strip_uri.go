@@ -15,7 +15,7 @@ import (
 //mockbin	true	/mockbin/some_path	/some_path
 func StripUriMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if svc, existed := c.Get(GwServiceName); existed {
+		if svc, existed := c.Get(KeyGwSvcName); existed {
 			svcName := svc.(string)
 			config.Logger.Info("strip url", zap.String("servicename", svcName))
 			c.Next()

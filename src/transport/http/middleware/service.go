@@ -11,7 +11,7 @@ import (
 	"net/http"
 )
 
-const GwServiceName = "GwServiceName"
+const KeyGwSvcName = "KeyGwSvcName"
 
 // 根据请求的
 
@@ -26,7 +26,7 @@ func ServiceNameMiddleware() gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, "请求的服务不存在")
 			c.Abort()
 		} else {
-			c.Set(GwServiceName, name)
+			c.Set(KeyGwSvcName, name)
 			c.Next()
 		}
 	}
