@@ -17,7 +17,7 @@ func IPFilterMiddleware() gin.HandlerFunc {
 		ip := c.ClientIP()
 		if svc, existed := c.Get(KeyGwSvcName); existed {
 			svcName := svc.(string)
-			if filterHandler.IsAllowed(svcName, ip) {
+			if filterHandler.Allow(svcName, ip) {
 				c.Next()
 			} else {
 				c.JSON(http.StatusMethodNotAllowed, "无权访问(IPFilterMiddleware)")

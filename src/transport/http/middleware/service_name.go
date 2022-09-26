@@ -6,8 +6,10 @@
 package middleware
 
 import (
+	"gateway_kit/config"
 	"gateway_kit/core/gateway"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 )
 
@@ -20,7 +22,7 @@ func ServiceNameMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		path := c.Request.URL.Path
 		host := c.Request.Host
-
+		config.Logger.Info("strip gw uri", zap.String("host", host), zap.String("request.url.path", c.Request.URL.Path))
 		name, err := svcHandler.Match(host, path)
 		if err != nil {
 			c.JSON(http.StatusNotFound, "请求的服务不存在(ServiceNameMiddleware)")

@@ -107,7 +107,7 @@ func (ac *AccessController) Stop() {
 	//close(ac.accessChan) // todo 这里有点危险，应该由写入的关闭
 }
 
-func (ac *AccessController) IsAllowed(svc, ip string) bool {
+func (ac *AccessController) Allow(svc, ip string) bool {
 	ac.mutex.RLock()
 	defer ac.mutex.RUnlock()
 

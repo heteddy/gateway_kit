@@ -29,11 +29,11 @@ func MakeProxyHandler() *gin.Engine {
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "")
 	})
+	// note 这里的顺序不能改，这里注册的不会使用middleware
+	admin := router.Group("/" + config.All.Name)
+	admin.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
+	pprof.RouteRegister(admin, "pprof")
 
-	proxy := router.Group("/" + config.All.Name)
-	//proxy.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	proxy.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
-	pprof.RouteRegister(proxy, "pprof")
 	// todo 如果改成proxy就不行，为什么呢？
 	router.Use( // 这里没有任何前缀
 		middleware.GwStripUriMiddleware(config.All.Name),
