@@ -52,8 +52,6 @@ func NewServiceRepo(
 			rateChan:       rateC,
 			protoChan:      protoC,
 			stopC:          make(chan struct{}),
-			//entities:   make([]*dao.HttpSvcEntity, 0, 1),
-			//mutex:      sync.RWMutex{},
 		}
 	})
 	return RepoHttp
@@ -106,7 +104,7 @@ loop:
 				IsWebsocket: entity.IsWebsocket,
 				IsHttps:     entity.IsHttps,
 			}
-			
+
 		}
 	}
 }

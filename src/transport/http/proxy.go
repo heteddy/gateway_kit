@@ -36,7 +36,7 @@ func MakeProxyHandler() *gin.Engine {
 	pprof.RouteRegister(proxy, "pprof")
 	// todo 如果改成proxy就不行，为什么呢？
 	router.Use( // 这里没有任何前缀
-		//middleware.ContentTypeMiddleware(),
+		middleware.GwStripUriMiddleware(config.All.Name),
 		middleware.AccessLogMiddleware(config.Logger),
 		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.ServiceNameMiddleware(),
@@ -45,6 +45,5 @@ func MakeProxyHandler() *gin.Engine {
 		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 		middleware.ReverseProxyMiddleware(lb.NewLBManager()),
 	)
-
 	return router
 }
