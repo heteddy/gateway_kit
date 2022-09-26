@@ -29,7 +29,7 @@ func MakeProxyHandler() *gin.Engine {
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "")
 	})
-	// note 这里的顺序不能改，这里注册的不会使用middleware
+	// note 这里的顺序不能改，这里注册的不会使用middleware,因为注册路由的时候是拷贝了一份handlers
 	admin := router.Group("/" + config.All.Name)
 	admin.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
 	pprof.RouteRegister(admin, "pprof")
