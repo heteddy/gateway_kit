@@ -322,10 +322,10 @@ var doc = `{
                 "client_qps",
                 "description",
                 "header_transfer",
+                "is_https",
+                "is_websocket",
                 "match_rule",
                 "name",
-                "need_https",
-                "need_websocket",
                 "server_qps",
                 "strip_uri",
                 "url_rewrite"
@@ -348,7 +348,7 @@ var doc = `{
                     }
                 },
                 "category": {
-                    "description": "如果gateway绑定多个域名，可以通过访问的host，来进行重定向",
+                    "description": "0：url prefix 1: host   如果gateway绑定多个域名，可以通过访问的host，来进行重定向",
                     "type": "integer"
                 },
                 "client_qps": {
@@ -368,6 +368,12 @@ var doc = `{
                 "id": {
                     "type": "string"
                 },
+                "is_https": {
+                    "type": "boolean"
+                },
+                "is_websocket": {
+                    "type": "boolean"
+                },
                 "match_rule": {
                     "description": "匹配的项目与category结合使用，如果是domain，host==match_rule，否则是url前缀匹配",
                     "type": "string"
@@ -375,12 +381,6 @@ var doc = `{
                 "name": {
                     "description": "gateway name",
                     "type": "string"
-                },
-                "need_https": {
-                    "type": "boolean"
-                },
-                "need_websocket": {
-                    "type": "boolean"
                 },
                 "server_qps": {
                     "description": "服务端流量控制",

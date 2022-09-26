@@ -7,7 +7,9 @@ package lb
 
 import (
 	"errors"
+	"gateway_kit/config"
 	"gateway_kit/dao"
+	"go.uber.org/zap"
 	"math/rand"
 	"sync"
 	"time"
@@ -29,6 +31,7 @@ func (lb *randomLB) UpdateNode(node *Node) {
 	defer lb.mutex.Unlock()
 	//lb.serviceAddrs = make(map[string][]*Node)
 	// service name 存在
+	config.Logger.Info("updating node", zap.Any("node", node))
 	if _nodes, existed := lb.serviceAddrs[node.Svc]; existed {
 		if node.EventType == dao.EventDelete {
 			// delete service nodes
@@ -40,11 +43,11 @@ func (lb *randomLB) UpdateNode(node *Node) {
 					break loop
 				}
 			}
-		} else {
+		} else { // 更新
 			_addrList := append(_nodes, node)
 			lb.serviceAddrs[node.Svc] = _addrList
 		}
-	} else {
+	} else { // 不存在，创建一个新的
 		newNodes := make([]*Node, 1, 1)
 		newNodes[0] = node
 		lb.serviceAddrs[node.Svc] = newNodes
@@ -54,12 +57,16 @@ func (lb *randomLB) Next(svc string) (string, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	n := r.Int63()
 	lb.mutex.RLock()
-	addrs := lb.serviceAddrs[svc]
-	lb.mutex.RUnlock()
-	if len(addrs) > 0 {
-		idx := n % int64(len(addrs))
-		return addrs[idx].Addr, nil
+	defer lb.mutex.RUnlock()
+	if addrs, existed := lb.serviceAddrs[svc]; existed {
+		if len(addrs) > 0 {
+			idx := n % int64(len(addrs))
+			return addrs[idx].Addr, nil
+		} else {
+			return "", errors.New("no service available")
+		}
 	} else {
-		return "", errors.New("no service available")
+		return "", errors.New("service not existed")
 	}
+
 }

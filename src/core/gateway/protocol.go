@@ -6,7 +6,9 @@
 package gateway
 
 import (
+	"gateway_kit/config"
 	"gateway_kit/dao"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -16,8 +18,8 @@ var onceProto sync.Once
 type ProtocolSupportedEvt struct {
 	EventType   int
 	Svc         string
-	IsHttps     bool `json:"need_https"  description:"type=支持https 1=支持"`
-	IsWebsocket bool `json:"need_websocket" description:"启用websocket 1=启用"`
+	IsHttps     bool `json:"is_https"  description:"type=支持https 1=支持"`
+	IsWebsocket bool `json:"is_websocket" description:"启用websocket 1=启用"`
 }
 
 type ProtocolTransCtrl struct {
@@ -45,9 +47,11 @@ loop:
 	for {
 		select {
 		case <-proto.stopC:
+			config.Logger.Warn("ProtocolTransCtrl exit")
 			break loop
 		case protocol, ok := <-proto.protoChan:
 			if !ok {
+				config.Logger.Warn("ProtocolTransCtrl exit")
 				break loop
 			}
 			proto.update(protocol)
@@ -69,7 +73,7 @@ func (proto *ProtocolTransCtrl) Stop() {
 func (proto *ProtocolTransCtrl) update(protocol *ProtocolSupportedEvt) {
 	proto.mutex.Lock()
 	defer proto.mutex.Unlock()
-
+	config.Logger.Info("update ProtocolTransCtrl", zap.Any("ProtocolSupportedEvt", protocol))
 	if protocol.EventType == dao.EventDelete {
 		// 删除
 		delete(proto.svcProtocols, protocol.Svc)

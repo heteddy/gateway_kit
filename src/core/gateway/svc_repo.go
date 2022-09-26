@@ -30,7 +30,9 @@ type HttpServiceRepo struct { //支持watch？
 	accessChan     chan<- *AccessConfigEvt
 	svcMatcherChan chan<- *SvcMatchRule
 	rateChan       chan<- *RateLimitConfigEvent
+	protoChan      chan<- *ProtocolSupportedEvt
 	stopC          chan struct{}
+
 	//entities   []*dao.HttpSvcEntity
 	//mutex      sync.RWMutex
 }
@@ -39,7 +41,8 @@ func NewServiceRepo(
 	addrC chan<- *lb.Node,
 	accessC chan<- *AccessConfigEvt,
 	matcherC chan<- *SvcMatchRule,
-	rateC chan<- *RateLimitConfigEvent) *HttpServiceRepo {
+	rateC chan<- *RateLimitConfigEvent,
+	protoC chan<- *ProtocolSupportedEvt) *HttpServiceRepo {
 	onceRepo.Do(func() {
 		RepoHttp = &HttpServiceRepo{
 			svcChan:        make(chan *dao.SvcEvent),
@@ -47,64 +50,79 @@ func NewServiceRepo(
 			accessChan:     accessC,
 			svcMatcherChan: matcherC,
 			rateChan:       rateC,
+			protoChan:      protoC,
 			stopC:          make(chan struct{}),
 			//entities:   make([]*dao.HttpSvcEntity, 0, 1),
 			//mutex:      sync.RWMutex{},
 		}
-		RepoHttp.Start()
 	})
 	return RepoHttp
 }
 
+func (repo *HttpServiceRepo) runLoop() {
+loop:
+	for {
+		select {
+		case <-repo.stopC:
+			break loop
+		case event, ok := <-repo.svcChan:
+
+			if !ok {
+				break loop
+			}
+			config.Logger.Info("receiving event", zap.Any("event", event))
+			entity := event.Entity
+			repo.addrChan <- &lb.Node{
+				Svc:       entity.Name,
+				EventType: event.EventType,
+				Addr:      entity.Addr,
+				Weight:    1,
+			}
+
+			repo.accessChan <- &AccessConfigEvt{
+				EventType: event.EventType,
+				Name:      entity.Name,
+				BlockIP:   entity.BlockList,
+				AllowIP:   entity.AllowList,
+				Category:  ACCESS_CONTROL_SERVICE,
+			}
+
+			repo.svcMatcherChan <- &SvcMatchRule{
+				EventType: event.EventType,
+				Svc:       entity.Name,
+				Category:  entity.Category,
+				Rule:      entity.MatchRule,
+			}
+
+			repo.rateChan <- &RateLimitConfigEvent{
+				EventType: event.EventType,
+				Svc:       entity.Name,
+				SvcQps:    entity.ServerQps,
+			}
+
+			repo.protoChan <- &ProtocolSupportedEvt{
+				EventType:   event.EventType,
+				Svc:         entity.Name,
+				IsWebsocket: entity.IsWebsocket,
+				IsHttps:     entity.IsHttps,
+			}
+			
+		}
+	}
+}
+
 // Start 启动服务
 func (repo *HttpServiceRepo) Start() {
-	go func() {
-	loop:
-		for {
-			select {
-			case <-repo.stopC:
-				break loop
-			case event, ok := <-repo.svcChan:
-
-				if !ok {
-					break loop
-				}
-				config.Logger.Info("receiving event", zap.Any("event", event))
-				for _, entity := range event.Entities {
-					repo.addrChan <- &lb.Node{
-						Svc:       entity.Name,
-						EventType: event.EventType,
-						Addr:      entity.Addr,
-						Weight:    1,
-					}
-					repo.accessChan <- &AccessConfigEvt{
-						EventType: event.EventType,
-						Name:      entity.Name,
-						BlockIP:   entity.BlockList,
-						AllowIP:   entity.AllowList,
-						Category:  ACCESS_CONTROL_SERVICE,
-					}
-					repo.svcMatcherChan <- &SvcMatchRule{
-						EventType: event.EventType,
-						Svc:       entity.Name,
-						Category:  entity.Category,
-						Rule:      entity.MatchRule,
-					}
-					repo.rateChan <- &RateLimitConfigEvent{
-						EventType: event.EventType,
-						Svc:       entity.Name,
-						SvcQps:    entity.ServerQps,
-					}
-				}
-			}
-		}
-	}()
+	go repo.runLoop()
 }
 
 func (repo *HttpServiceRepo) Stop() {
 	close(repo.stopC)
 	close(repo.addrChan)
 	close(repo.accessChan)
+	close(repo.svcMatcherChan)
+	close(repo.rateChan)
+	close(repo.protoChan)
 }
 
 func (repo *HttpServiceRepo) In() chan<- *dao.SvcEvent {

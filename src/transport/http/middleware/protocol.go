@@ -8,6 +8,7 @@ package middleware
 import (
 	"gateway_kit/core/gateway"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 const (
@@ -18,7 +19,7 @@ const (
 func ProtocolMiddleware() gin.HandlerFunc {
 	protocolCtrl := gateway.NewProtocolTransCtrl()
 	return func(c *gin.Context) {
-		if svc, existed := c.Get(KeyGwSvcName); !existed {
+		if svc, existed := c.Get(KeyGwSvcName); existed {
 			// 这里不应该不存在，因为service中间件应该会拒绝掉
 			svcName := svc.(string)
 			isHttps := protocolCtrl.IsHttps(svcName)
@@ -34,7 +35,11 @@ func ProtocolMiddleware() gin.HandlerFunc {
 			default:
 				c.Set(KeySvcRequestScheme, "http")
 			}
+			c.Next()
+		} else {
+			c.JSON(http.StatusNotFound, "not found service")
+			c.Abort()
 		}
-		c.Next()
+
 	}
 }

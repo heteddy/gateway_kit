@@ -6,7 +6,9 @@
 package gateway
 
 import (
+	"gateway_kit/config"
 	"gateway_kit/dao"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 	"sync"
 )
@@ -43,6 +45,7 @@ func NewRateLimiter() *RateLimiter {
 func (rl *RateLimiter) update(c *RateLimitConfigEvent) {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
+	config.Logger.Info("update RateLimiter", zap.Any("RateLimitConfigEvent", c))
 	if c.EventType == dao.EventDelete {
 		delete(rl.svcQps, c.Svc)
 		delete(rl.svcLimiter, c.Svc)
@@ -60,6 +63,7 @@ loop:
 			break loop
 		case c, ok := <-rl.configC:
 			if !ok {
+				config.Logger.Warn("RateLimiter exit")
 				break loop
 			}
 			rl.update(c)
@@ -79,6 +83,8 @@ func (rl *RateLimiter) In() chan<- *RateLimitConfigEvent {
 }
 
 func (rl *RateLimiter) Allow(name string) bool {
+	rl.mutex.RLock()
+	defer rl.mutex.RUnlock()
 	if limiter, existed := rl.svcLimiter[name]; existed {
 		return limiter.Allow()
 	} else {

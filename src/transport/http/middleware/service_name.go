@@ -23,7 +23,7 @@ func ServiceNameMiddleware() gin.HandlerFunc {
 
 		name, err := svcHandler.Match(host, path)
 		if err != nil {
-			c.JSON(http.StatusNotFound, "请求的服务不存在")
+			c.JSON(http.StatusNotFound, "请求的服务不存在(ServiceNameMiddleware)")
 			c.Abort()
 		} else {
 			c.Set(KeyGwSvcName, name)

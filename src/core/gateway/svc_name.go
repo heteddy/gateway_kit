@@ -9,18 +9,23 @@ import (
 	"errors"
 	"gateway_kit/config"
 	"gateway_kit/dao"
+	"go.uber.org/zap"
 	"strings"
 	"sync"
 )
 
 var onceMatcher sync.Once
-var Matcher *SvcMatcher
+var svcMatcher *SvcMatcher
 
 type SvcMatchRule struct {
 	Svc       string
 	EventType int
 	Category  int
 	Rule      string
+}
+
+func (r SvcMatchRule) Is(other *SvcMatchRule) bool {
+	return r.Svc == other.Svc && r.Category == other.Category && r.Rule == other.Rule
 }
 
 func (r SvcMatchRule) Match(host, path string) bool {
@@ -53,22 +58,22 @@ type SvcMatcher struct {
 
 func NewSvcMatcher() *SvcMatcher {
 	onceMatcher.Do(func() {
-		Matcher = &SvcMatcher{
+		svcMatcher = &SvcMatcher{
 			mutex:    sync.RWMutex{},
-			svcRules: nil,
+			svcRules: make([]*SvcMatchRule, 0, 10),
 			stopC:    make(chan struct{}),
 			ruleC:    make(chan *SvcMatchRule),
 		}
-		Matcher.Start()
+		//svcMatcher.Start()
 
 	})
-	return Matcher
+	return svcMatcher
 }
 
-func (svc *SvcMatcher) Match(host, path string) (string, error) {
-	svc.mutex.RLock()
-	defer svc.mutex.RUnlock()
-	for _, entity := range svc.svcRules {
+func (matcher *SvcMatcher) Match(host, path string) (string, error) {
+	matcher.mutex.RLock()
+	defer matcher.mutex.RUnlock()
+	for _, entity := range matcher.svcRules {
 		if entity.Match(host, path) {
 			return entity.Svc, nil
 		}
@@ -76,37 +81,53 @@ func (svc *SvcMatcher) Match(host, path string) (string, error) {
 	return "", errors.New("service not found")
 }
 
-func (svc *SvcMatcher) In() chan<- *SvcMatchRule {
-	return svc.ruleC
+func (matcher *SvcMatcher) In() chan<- *SvcMatchRule {
+	return matcher.ruleC
 }
-func (svc *SvcMatcher) runLoop() {
+
+func (matcher *SvcMatcher) delete(rule *SvcMatchRule) {
+	for idx, r := range matcher.svcRules {
+		if r.Is(rule) {
+			matcher.svcRules = append(matcher.svcRules[0:idx], matcher.svcRules[idx+1:]...)
+		}
+	}
+}
+func (matcher *SvcMatcher) update(rule *SvcMatchRule) {
+	matcher.mutex.Lock()
+	defer matcher.mutex.Unlock()
+	config.Logger.Info("update svc matcher", zap.Any("rule", rule))
+	switch rule.EventType {
+	case dao.EventDelete:
+		matcher.delete(rule)
+	case dao.EventUpdate:
+		matcher.delete(rule)
+		matcher.svcRules = append(matcher.svcRules, rule)
+	case dao.EventCreate:
+		matcher.svcRules = append(matcher.svcRules, rule)
+	default:
+
+	}
+}
+
+func (matcher *SvcMatcher) runLoop() {
 loop:
 	for {
 		select {
-		case rule, ok := <-svc.ruleC:
+		case rule, ok := <-matcher.ruleC:
 			if !ok {
 				break loop
 			}
-			if rule.EventType == dao.EventDelete {
-				for idx, r := range svc.svcRules {
-					if r.Svc == rule.Svc {
-						svc.svcRules = append(svc.svcRules[0:idx], svc.svcRules[idx+1:]...)
-						break
-					}
-				}
-			} else {
-				svc.svcRules = append(svc.svcRules, rule)
-			}
-		case <-svc.stopC:
+			matcher.update(rule)
+		case <-matcher.stopC:
 			break loop
 		}
 	}
 }
 
-func (svc *SvcMatcher) Start() {
-	go svc.runLoop()
+func (matcher *SvcMatcher) Start() {
+	go matcher.runLoop()
 }
 
-func (svc *SvcMatcher) Stop() {
-	close(svc.stopC)
+func (matcher *SvcMatcher) Stop() {
+	close(matcher.stopC)
 }

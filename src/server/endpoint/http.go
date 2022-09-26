@@ -18,17 +18,17 @@ type httpSvcCtrl struct {
 
 type HttpSvcRequest struct {
 	ID             string   `json:"id"`
-	Name           string   `json:"name" binding:"name,required" validator:"min=3,max=10"`    // gateway name
+	Name           string   `json:"name" binding:"required" validator:"min=3,max=10"`         // gateway name
 	Description    string   `json:"description" binding:"required" validator:"min=0,max=120"` //描述
 	BlockList      []string `json:"block_list" binding:"required"`                            // 网关黑名单，所有的服务通用
 	AllowList      []string `json:"allow_list" binding:"required"`
 	Addr           string   `json:"addr" binding:"required" validator:"min=1"`
-	ClientQps      int      `json:"client_qps" binding:"required" validator:"min=1"` // 客户端流量控制
-	ServerQps      int      `json:"server_qps" binding:"required" validator:"min=1"` // 服务端流量控制
-	Category       int      `json:"category"  binding:"required" `                   // 如果gateway绑定多个域名，可以通过访问的host，来进行重定向
+	ClientQps      *int     `json:"client_qps" binding:"required" validator:"min=1"` // 客户端流量控制
+	ServerQps      *int     `json:"server_qps" binding:"required" validator:"min=1"` // 服务端流量控制
+	Category       *int     `json:"category" binding:"required"`                     // 0：url prefix 1: host   如果gateway绑定多个域名，可以通过访问的host，来进行重定向
 	MatchRule      string   `json:"match_rule" binding:"required" validator:"min=0"` // 匹配的项目与category结合使用，如果是domain，host==match_rule，否则是url前缀匹配
-	IsHttps        bool     `json:"need_https" binding:"required" `
-	IsWebsocket    bool     `json:"need_websocket" binding:"required" `
+	IsHttps        *bool    `json:"is_https" binding:"required" `
+	IsWebsocket    *bool    `json:"is_websocket" binding:"required" `
 	StripUri       []string `json:"strip_uri" binding:"required" `   // 如果修改url可以通过gateway修改
 	UrlRewrite     []string `json:"url_rewrite" binding:"required" ` // todo 需要支持正则表达式？,当修改了uri，可以对客户端保持兼容
 	HeaderTransfer []string `json:"header_transfer" binding:"required"`
@@ -97,12 +97,12 @@ func (ctrl *httpSvcCtrl) Create(c *gin.Context) {
 		BlockList:      req.BlockList,
 		AllowList:      req.AllowList,
 		Addr:           req.Addr,
-		ClientQps:      req.ClientQps,
-		ServerQps:      req.ServerQps,
-		Category:       req.Category,
+		ClientQps:      *req.ClientQps,
+		ServerQps:      *req.ServerQps,
+		Category:       *req.Category,
 		MatchRule:      req.MatchRule,
-		IsHttps:        req.IsHttps,
-		IsWebsocket:    req.IsWebsocket,
+		IsHttps:        *req.IsHttps,
+		IsWebsocket:    *req.IsWebsocket,
 		StripUri:       req.StripUri,
 		UrlRewrite:     req.UrlRewrite,
 		HeaderTransfer: req.HeaderTransfer,
@@ -142,12 +142,12 @@ func (ctrl *httpSvcCtrl) Update(c *gin.Context) {
 		BlockList:      req.BlockList,
 		AllowList:      req.AllowList,
 		Addr:           req.Addr,
-		ClientQps:      req.ClientQps,
-		ServerQps:      req.ServerQps,
-		Category:       req.Category,
+		ClientQps:      *req.ClientQps,
+		ServerQps:      *req.ServerQps,
+		Category:       *req.Category,
 		MatchRule:      req.MatchRule,
-		IsHttps:        req.IsHttps,
-		IsWebsocket:    req.IsWebsocket,
+		IsHttps:        *req.IsHttps,
+		IsWebsocket:    *req.IsWebsocket,
 		StripUri:       req.StripUri,
 		UrlRewrite:     req.UrlRewrite,
 		HeaderTransfer: req.HeaderTransfer,

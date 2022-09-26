@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : strip_uri.go
+// @File   : strip_uri_svc.go
 // @Description:
 // @Date   : 2022/9/8 21:21
 
@@ -20,7 +20,7 @@ func StripUriMiddleware() gin.HandlerFunc {
 			config.Logger.Info("strip url", zap.String("servicename", svcName))
 			c.Next()
 		} else {
-			c.JSON(http.StatusNotFound, "请求的服务不存在")
+			c.JSON(http.StatusNotFound, "请求的服务不存在(StripUriMiddleware)")
 			c.Abort()
 		}
 	}

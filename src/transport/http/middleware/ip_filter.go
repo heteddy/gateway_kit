@@ -20,11 +20,11 @@ func IPFilterMiddleware() gin.HandlerFunc {
 			if filterHandler.IsAllowed(svcName, ip) {
 				c.Next()
 			} else {
-				c.JSON(http.StatusMethodNotAllowed, "无权访问")
+				c.JSON(http.StatusMethodNotAllowed, "无权访问(IPFilterMiddleware)")
 				c.Abort()
 			}
 		} else {
-			c.JSON(http.StatusNotFound, "请求的服务不存在")
+			c.JSON(http.StatusNotFound, "请求的服务不存在(IPFilterMiddleware)")
 			c.Abort()
 		}
 

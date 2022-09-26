@@ -131,13 +131,15 @@ func startServer() {
 	printBanner(config.All.Name)
 	errC := make(chan error)
 	go transport.Interrupt(errC)
-	handler := transportHttp.MakeServerHandler()
-	svr := &http.Server{
-		Addr:           ":" + config.All.Server.HttpPort,
-		Handler:        handler,
-		MaxHeaderBytes: 1 << 25,
-	}
+
 	go func() {
+		handler := transportHttp.MakeServerHandler()
+		svr := &http.Server{
+			Addr:           ":" + config.All.Server.HttpPort,
+			Handler:        handler,
+			MaxHeaderBytes: 1 << 25,
+		}
+		fmt.Printf("start gateway %s\n", svr.Addr)
 		err := svr.ListenAndServe() //改成
 		errC <- err
 	}()
@@ -155,8 +157,10 @@ func startServer() {
 			Handler:        handler,
 			MaxHeaderBytes: 1 << 25,
 		}
+		fmt.Printf("start gateway %s\n", proxySvr.Addr)
 		log.Fatalln(proxySvr.ListenAndServe())
 	}()
+	fmt.Printf("waiting....\n")
 	<-errC
 }
 

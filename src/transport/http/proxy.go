@@ -34,15 +34,16 @@ func MakeProxyHandler() *gin.Engine {
 	//proxy.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	proxy.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
 	pprof.RouteRegister(proxy, "pprof")
-	proxy.Use( // 这里没有任何前缀
-		middleware.ContentTypeMiddleware(),
+	// todo 如果改成proxy就不行，为什么呢？
+	router.Use( // 这里没有任何前缀
+		//middleware.ContentTypeMiddleware(),
 		middleware.AccessLogMiddleware(config.Logger),
 		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.ServiceNameMiddleware(),
 		middleware.IPFilterMiddleware(),
-		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 		middleware.ProtocolMiddleware(),
-		middleware.ReverseProxyMiddleware(lb.NewLoadBalanceMgr()),
+		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		middleware.ReverseProxyMiddleware(lb.NewLBManager()),
 	)
 
 	return router

@@ -8,8 +8,10 @@ package gateway
 import (
 	"bytes"
 	"compress/gzip"
+	"gateway_kit/config"
 	"gateway_kit/core/lb"
 	"gateway_kit/util"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -34,22 +36,22 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName, sc
 		// 随机选择一个url
 		// note api gateway的功能： url 改写 rewrite
 		// /api-gateway/server2
+		//  todo 中间件跳过一些prefix
 		re, _ := regexp.Compile("^/api-gateway/(.*)")
 		urlPath := re.ReplaceAllString(req.URL.Path, "$1")
 		//svcName := ServiceName(urlPath)
 		// 是否修改host
 		//hosts, err := repo.GetServices(svcName)
-		log.Printf("servicename=%s \n", svcName)
 		host, err := balancer.Next(svcName) // 这里需要返回一个对象，scheme， host都是从这里获取
-		//log.Printf("loadbalance host=%s, error=%v\n", host, err)
 		if err != nil {
-
+			config.Logger.Error("balancer error", zap.Error(err))
 		} else {
 			// 是否修改scheme
 			req.URL.Scheme = scheme // 通过配置获取scheme；是否可以转换https-> http wss->ws
 			req.URL.Host = host
 			// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
 			req.URL.Path = util.JoinPath("", urlPath)
+			config.Logger.Info("redirect to path", zap.String("req.URL.Path", urlPath))
 		}
 		if _, ok := req.Header["User-Agent"]; !ok {
 			// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header

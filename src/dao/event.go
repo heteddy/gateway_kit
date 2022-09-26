@@ -6,24 +6,26 @@
 package dao
 
 const (
-	EventUpdate = iota
+	EventInvalid = -1
+	EventCreate  = iota
+	EventUpdate
 	EventDelete
 )
 
 type SvcEvent struct {
 	EventType int
-	Entities  []*HttpSvcEntity
+	Entity    *HttpSvcEntity
 }
 
-func (e *SvcEvent) Empty() bool {
-	return len(e.Entities) == 0
-}
+//func (e *SvcEvent) Empty() bool {
+//	return len(e.Entity) == 0
+//}
 
 type GwEvent struct {
 	EventType int
-	Entities  []*GatewayEntity
+	Entity    *GatewayEntity
 }
 
-func (e *GwEvent) Empty() bool {
-	return len(e.Entities) == 0
-}
+//func (e *GwEvent) Empty() bool {
+//	return len(e.Entity) == 0
+//}

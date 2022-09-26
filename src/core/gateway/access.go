@@ -51,7 +51,6 @@ func NewAccessController() *AccessController {
 			accessChan: make(chan *AccessConfigEvt),
 			stopC:      make(chan struct{}),
 		}
-		Access.Start()
 	})
 	return Access
 
@@ -60,6 +59,7 @@ func NewAccessController() *AccessController {
 func (ac *AccessController) update(c *AccessConfigEvt) {
 	ac.mutex.Lock()
 	defer ac.mutex.Unlock()
+	config.Logger.Info("update AccessController", zap.Any("AccessConfigEvt", c))
 	switch c.Category {
 	case ACCESS_CONTROL_GATEWAY: // gateway 只可能有一个
 		// gateway不支持删除

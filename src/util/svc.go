@@ -62,6 +62,7 @@ func (s *Svc) Start(endpoint SvcEndpoint) {
 
 func (s *Svc) Stop() {
 	s.cancelCtx()
+	s.wait()
 }
 
 type TickerSvc struct {
@@ -120,5 +121,4 @@ func (s *TickerSvc) Start(endpoint SvcEndpoint) {
 		fmt.Printf("立即执行 task name: %s\n", s.Svc.name)
 		s.Trigger()
 	}
-	s.wait()
 }
