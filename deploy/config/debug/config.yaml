@@ -5,12 +5,12 @@ mode: debug
 k8s: true
 server:
   httpPort: 9901
-  timeout: 40000 # 单位ms
+  timeout: 4000 # 单位ms
 
 gateway:
   httpPort: 9903
   grpcPort: 9904
-  timeout: 40000 # 单位ms
+  timeout: 4000 # 单位ms
   stripUri: gateway-kit
 hystrix:
 

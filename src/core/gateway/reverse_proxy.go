@@ -6,18 +6,13 @@
 package gateway
 
 import (
-	"bytes"
-	"compress/gzip"
 	"gateway_kit/config"
 	"gateway_kit/core/lb"
 	"gateway_kit/util"
 	"go.uber.org/zap"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httputil"
-	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -37,8 +32,8 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName, sc
 		// note api gateway的功能： url 改写 rewrite
 		// /api-gateway/server2
 		//  todo 中间件跳过一些prefix
-		re, _ := regexp.Compile("^/api-gateway/(.*)")
-		urlPath := re.ReplaceAllString(req.URL.Path, "$1")
+		//re, _ := regexp.Compile("^/api-gateway/(.*)")
+		//urlPath := re.ReplaceAllString(req.URL.Path, "$1")
 		//svcName := ServiceName(urlPath)
 		// 是否修改host
 		//hosts, err := repo.GetServices(svcName)
@@ -50,19 +45,18 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName, sc
 			req.URL.Scheme = scheme // 通过配置获取scheme；是否可以转换https-> http wss->ws
 			req.URL.Host = host
 			// todo 这里可以做path改写，当降级的时候，直接改地址就可以了
-			req.URL.Path = util.JoinPath("", urlPath)
-			config.Logger.Info("redirect to path", zap.String("req.URL.Path", urlPath))
+			req.URL.Path = util.JoinPath("", req.URL.Path)
+			config.Logger.Info("redirect to path", zap.Any("req.URL", req.URL))
 		}
 		if _, ok := req.Header["User-Agent"]; !ok {
 			// 这里增加一个前缀，如果请求header不包括x-request-id 可以增加一个header
 			req.Header.Set("User-Agent", "teddy-api-gateway")
 		} else {
-			req.Header.Add("User-Agent", "api-gateway")
+			req.Header.Add("User-Agent", "teddy-api-gateway")
 		}
 		for k, v := range req.Header {
 			log.Printf("k=%s,v=%s\n", k, v)
 		}
-		log.Printf("new request to %s", req.URL.String())
 	}
 }
 
@@ -72,37 +66,38 @@ func (builder *ProxyBuilder) BuildModifier() func(req *http.Response) error {
 		if strings.Contains(resp.Header.Get("Connection"), "Upgrade") {
 			return nil
 		}
-		var payload []byte
-		var readErr error
-		//todo 兼容gzip压缩
-		if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
-			bodyReader, err := gzip.NewReader(resp.Body)
-			if err != nil {
-				return err
-			}
-			payload, readErr = ioutil.ReadAll(bodyReader)
-			resp.Header.Del("Content-Encoding")
-		} else {
-			payload, readErr = ioutil.ReadAll(resp.Body)
-		}
-		if readErr != nil {
-			return readErr
-		}
-		// note api gateway的功能，错误码统一处理，异常请求时设置StatusCode
-		if resp.StatusCode != 200 {
-			payload = []byte("StatusCode error:" + string(payload))
-		}
-		//todo 因为预读了数据所以内容重新回写
-		payload2 := []byte(string(payload) + " from api gateway\n")
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(payload2))
-		resp.ContentLength = int64(len(payload2))
-		resp.Header.Set("Content-Length", strconv.FormatInt(int64(len(payload2)), 10))
+		//var payload []byte
+		//var readErr error
+		////todo 兼容gzip压缩
+		//if strings.Contains(resp.Header.Get("Content-Encoding"), "gzip") {
+		//	bodyReader, err := gzip.NewReader(resp.Body)
+		//	if err != nil {
+		//		return err
+		//	}
+		//	payload, readErr = ioutil.ReadAll(bodyReader)
+		//	resp.Header.Del("Content-Encoding")
+		//} else {
+		//	payload, readErr = ioutil.ReadAll(resp.Body)
+		//}
+		//if readErr != nil {
+		//	return readErr
+		//}
+		//// note api gateway的功能，错误码统一处理，异常请求时设置StatusCode
+		//if resp.StatusCode != 200 {
+		//	payload = []byte("StatusCode error:" + string(payload))
+		//}
+		////todo 因为预读了数据所以内容重新回写
+		//payload2 := []byte(string(payload) + " from api gateway\n")
+		//resp.Body = ioutil.NopCloser(bytes.NewBuffer(payload2))
+		//resp.ContentLength = int64(len(payload2))
+		//resp.Header.Set("Content-Length", strconv.FormatInt(int64(len(payload2)), 10))
 		return nil
 	}
 }
 
 func (builder *ProxyBuilder) BuildErrorHandler() func(http.ResponseWriter, *http.Request, error) {
 	return func(writer http.ResponseWriter, request *http.Request, err error) {
+		config.Logger.Warn("proxy error", zap.Error(err))
 		http.Error(writer, "ErrorHandler error:"+err.Error(), 500)
 	}
 }

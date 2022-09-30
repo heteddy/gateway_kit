@@ -38,10 +38,10 @@ func MakeProxyHandler() *gin.Engine {
 	router.Use( // 这里没有任何前缀
 		middleware.GwStripUriMiddleware(config.All.Name),
 		middleware.AccessLogMiddleware(config.Logger),
-		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.ServiceNameMiddleware(),
 		middleware.IPFilterMiddleware(),
 		middleware.ProtocolMiddleware(),
+		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 		middleware.ReverseProxyMiddleware(lb.NewLBManager()),
 	)

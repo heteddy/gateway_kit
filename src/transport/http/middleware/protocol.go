@@ -30,8 +30,8 @@ func ProtocolMiddleware() gin.HandlerFunc {
 				c.Set(KeySvcRequestScheme, "wss")
 			case isHttps:
 				c.Set(KeySvcRequestScheme, "https")
-			case isWebSocket:
-				c.Set(KeySvcRequestScheme, "ws")
+			case isWebSocket: // note websocket 仍然使用http
+				c.Set(KeySvcRequestScheme, "http")
 			default:
 				c.Set(KeySvcRequestScheme, "http")
 			}
