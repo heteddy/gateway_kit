@@ -118,7 +118,7 @@ func (engine *GatewayDao) Update(ctx context.Context, _id string, gw *GatewayEnt
 		return gw, err
 	} else {
 
-		ret, err := engine.Collection().UpdateByID(ctx, objID, gw, options.Update().SetUpsert(false))
+		ret, err := engine.Collection().UpdateByID(ctx, objID, bson.M{"$set": gw}, options.Update().SetUpsert(false))
 		if err != nil {
 			return gw, err
 		} else {

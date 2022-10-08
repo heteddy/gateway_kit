@@ -147,7 +147,7 @@ func (engine *HttpSvcDao) Update(ctx context.Context, _id string, svc *HttpSvcEn
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return svc, err
 	} else {
-		ret, err := engine.Collection().UpdateByID(ctx, objID, svc, options.Update().SetUpsert(false))
+		ret, err := engine.Collection().UpdateByID(ctx, objID, bson.M{"$set": svc}, options.Update().SetUpsert(false))
 		if err != nil {
 			return svc, err
 		} else {

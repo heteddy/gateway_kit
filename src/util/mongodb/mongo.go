@@ -111,7 +111,8 @@ func (m Dao) SoftDelete(ctx context.Context, _id string) error {
 		return err
 	} else {
 		updatedAt := time.Now().Unix()
-		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"deleted_at": updatedAt, "updated_at": updatedAt}, options.Update().SetUpsert(false))
+		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"$set": bson.M{"deleted_at": updatedAt, "updated_at": updatedAt}},
+			options.Update().SetUpsert(false))
 		if err != nil {
 			return err
 		} else {
