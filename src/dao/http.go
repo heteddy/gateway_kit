@@ -28,6 +28,7 @@ const (
 	SvcCategoryHost      = 1
 )
 
+// HttpSvcEntity 不要更新地址，如果地址更新，删除service再重新添加
 type HttpSvcEntity struct {
 	ID             *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Name           string              `json:"name" bson:"name"` //http服务，

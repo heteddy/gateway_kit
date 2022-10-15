@@ -56,6 +56,7 @@ func (pd *PollingDiscovery) loadServices() ([]*dao.HttpSvcEntity, error) {
 	if pd.pollingAt == nil {
 		return pd.svcDao.All(context.Background())
 	} else {
+		config.Logger.Info("loadServices", zap.Time("polling", *pd.pollingAt), zap.Time("now", time.Now()))
 		return pd.svcDao.ChangeFrom(context.Background(), *pd.pollingAt)
 	}
 }
@@ -79,7 +80,7 @@ func (pd *PollingDiscovery) endpoint() util.SvcEndpoint {
 				switch {
 				case pd.pollingAt == nil:
 					eventType = dao.EventCreate
-				case pd.pollingAt != nil && entity.DeletedAt > 0:
+				case entity.DeletedAt > 0:
 					eventType = dao.EventDelete
 				case pd.pollingAt != nil && entity.CreatedAt.After(*pd.pollingAt):
 					eventType = dao.EventCreate

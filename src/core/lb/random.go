@@ -7,6 +7,7 @@ package lb
 
 import (
 	"errors"
+	"fmt"
 	"gateway_kit/config"
 	"gateway_kit/dao"
 	"go.uber.org/zap"
@@ -26,6 +27,15 @@ func NewRandomLB() LoadBalancer {
 		serviceAddrs: make(map[string][]*Node),
 	}
 }
+func (lb *randomLB) Log() {
+	fmt.Printf("\nstarting log routing table\n")
+	for k, _nodes := range lb.serviceAddrs {
+		for _, v := range _nodes {
+			fmt.Printf("name=%20s, node=%v\n", k, v)
+		}
+	}
+	fmt.Printf("\n")
+}
 func (lb *randomLB) UpdateNode(node *Node) {
 	lb.mutex.Lock()
 	defer lb.mutex.Unlock()
@@ -33,25 +43,35 @@ func (lb *randomLB) UpdateNode(node *Node) {
 	// service name 存在
 	config.Logger.Info("updating node", zap.Any("node", node))
 	if _nodes, existed := lb.serviceAddrs[node.Svc]; existed {
-		if node.EventType == dao.EventDelete {
-			// delete service nodes
+		switch node.EventType {
+		case dao.EventDelete:
 		loop:
 			for idx, n := range _nodes {
-				if n.Addr == node.Addr {
+				if n.IsSameNode(*node) {
 					_addrList := append(_nodes[0:idx], _nodes[idx+1:]...)
 					lb.serviceAddrs[node.Svc] = _addrList
 					break loop
 				}
 			}
-		} else { // 更新
-			_addrList := append(_nodes, node)
-			lb.serviceAddrs[node.Svc] = _addrList
+		case dao.EventUpdate:
+			for _, n := range _nodes {
+				if n.IsSameNode(*node) {
+					n.Update(*node)
+				}
+			}
+		case dao.EventCreate:
+			nodes := append(_nodes, node)
+			lb.serviceAddrs[node.Svc] = nodes
+		default:
 		}
-	} else { // 不存在，创建一个新的
-		newNodes := make([]*Node, 1, 1)
-		newNodes[0] = node
-		lb.serviceAddrs[node.Svc] = newNodes
+	} else { // 没有找到，添加到
+		if node.EventType != dao.EventDelete {
+			newNodes := make([]*Node, 1, 1)
+			newNodes[0] = node
+			lb.serviceAddrs[node.Svc] = newNodes
+		}
 	}
+	lb.Log()
 }
 func (lb *randomLB) Next(svc string) (string, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
