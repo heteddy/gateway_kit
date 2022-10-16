@@ -7,6 +7,10 @@ server:
   httpPort: 9901
   timeout: 4000 # 单位ms
 
+redis:
+  Addr: 192.168.64.5:6379
+  Database: 3
+
 gateway:
   httpPort: 9903
   grpcPort: 9904

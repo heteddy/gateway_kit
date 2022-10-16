@@ -32,7 +32,7 @@ func MakeServerHandler() *gin.Engine {
 			SkipPaths: []string{"/healthz"},
 		}),
 		middleware.AccessLogMiddleware(config.Logger),
-		//middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		//middleware.RateLimitMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 	)
 	router.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, "")

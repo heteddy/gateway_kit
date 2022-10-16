@@ -37,15 +37,22 @@ type Configure struct {
 		StripUri string
 		Timeout  int
 	}
+	Redis struct {
+		Addr     string
+		Pass     string
+		Database int
+	}
 	RateLimit struct {
 		Limit int
 		Burst int
 	}
 	Tables struct {
-		HttpSvc string
-		GrpcSvc string
-		TcpSvc  string
-		Gateway string
+		HttpSvc  string
+		GrpcSvc  string
+		TcpSvc   string
+		Gateway  string
+		Flow     string
+		FlowHour string
 	}
 	MongoC mongodb.Config
 }
@@ -79,8 +86,9 @@ func InitConfigure(configureFile, logPath string) error {
 		panic(loggerErr)
 	}
 	InitMongo(All.MongoC, All.Mode)
+	InitRedis(All.Redis.Addr, All.Redis.Pass, All.Redis.Database)
 	// 初始化
-	//gin.SetMode("test")
+	gin.SetMode(All.Mode)
 
 	return nil
 }

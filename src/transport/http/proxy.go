@@ -42,7 +42,7 @@ func MakeProxyHandler() *gin.Engine {
 		middleware.IPFilterMiddleware(),
 		middleware.ProtocolMiddleware(),
 		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
-		middleware.RateLimiteMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		middleware.RateLimitMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
 		middleware.ReverseProxyMiddleware(lb.NewLBManager()),
 	)
 	return router

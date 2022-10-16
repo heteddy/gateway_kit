@@ -110,8 +110,9 @@ func (m Dao) SoftDelete(ctx context.Context, _id string) error {
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return err
 	} else {
-		updatedAt := time.Now().Unix()
-		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"$set": bson.M{"deleted_at": updatedAt, "updated_at": time.Now()}},
+		now := time.Now()
+		updatedAt := now.Unix()
+		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"$set": bson.M{"deleted_at": updatedAt, "updated_at": now}},
 			options.Update().SetUpsert(false))
 		if err != nil {
 			return err

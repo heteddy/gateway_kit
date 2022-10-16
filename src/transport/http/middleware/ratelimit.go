@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : rate_limit.go
+// @File   : ratelimit.go
 // @Description:
 // @Date   : 2022/9/5 16:34
 
@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-func RateLimiteMiddleware(limit float64, burst int) gin.HandlerFunc {
+func RateLimitMiddleware(limit float64, burst int) gin.HandlerFunc {
 	// note 这里只能是单机版
 	sysLimiter := rate.NewLimiter(rate.Limit(limit), burst)
 	svcLimiter := gateway.NewRateLimiter()

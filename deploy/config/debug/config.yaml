@@ -7,6 +7,12 @@ server:
   httpPort: 9901
   timeout: 4000 # 单位ms
 
+redis:
+  Addr: 192.168.64.5:6379
+  Pass:
+  Database: 3
+
+
 gateway:
   httpPort: 9903
   grpcPort: 9904
@@ -26,8 +32,12 @@ mongoC:
   database: gateway
   replica: rs0
 
-tables:
+tables:   # 这里要创建不同的库，不能放到同一个库中
   httpSvc: tb_http_service
   grpcSvc: tb_grpc_service
   tcpSvc: tb_tcp_service
   gateway: tb_gateway
+  flow: tb_flow
+  flowHour: tb_flow_hour
+
+

@@ -1,5 +1,5 @@
 // @Author : detaohe
-// @File   : rate_limit.go
+// @File   : ratelimit.go
 // @Description:
 // @Date   : 2022/9/12 21:09
 
