@@ -27,3 +27,5 @@ tables:
   grpcSvc: grpc_service
   tcpSvc: tcp_service
   gateway: tb_gateway
+  serviceHour: tb_service_hour
+  requestHour: tb_request_hour

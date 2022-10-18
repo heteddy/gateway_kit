@@ -47,12 +47,12 @@ type Configure struct {
 		Burst int
 	}
 	Tables struct {
-		HttpSvc  string
-		GrpcSvc  string
-		TcpSvc   string
-		Gateway  string
-		Flow     string
-		FlowHour string
+		HttpSvc     string
+		GrpcSvc     string
+		TcpSvc      string
+		Gateway     string
+		ServiceHour string
+		RequestHour string
 	}
 	MongoC mongodb.Config
 }

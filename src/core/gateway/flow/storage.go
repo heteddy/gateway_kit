@@ -15,8 +15,7 @@ import (
 type FlowStorage struct {
 	client      *redis.Client
 	storageChan chan StorageCmd
-	//loadChan    chan *loadEvent
-	stopC chan struct{}
+	stopC       chan struct{}
 }
 
 func NewFlowStorage() *FlowStorage {
@@ -59,7 +58,9 @@ func (storage *FlowStorage) loadByPrefix(prefix string) (map[string]int64, error
 					config.Logger.Error("convert string value error", zap.Error(err3), zap.String("s", _v))
 					return nil, err3
 				} else {
-					result[keys[idx]] = value
+					if value > 0 {
+						result[keys[idx]] = value
+					}
 				}
 			}
 		}

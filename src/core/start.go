@@ -7,7 +7,6 @@ package core
 
 import (
 	"fmt"
-	"gateway_kit/config"
 	"gateway_kit/core/discovery"
 	"gateway_kit/core/gateway"
 	"gateway_kit/core/gateway/flow"
@@ -32,7 +31,7 @@ func Start() {
 	pd := discovery.NewPollingDiscovery(repo.In(), gw.In())
 	pd.Start()
 
-	flowC := flow.NewFlowCollector(config.All.Name)
+	flowC := flow.NewFlowCollector()
 	flowC.Start()
 
 	// 服务发现，目前轮训数据库

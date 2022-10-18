@@ -37,7 +37,7 @@ tables:   # 这里要创建不同的库，不能放到同一个库中
   grpcSvc: tb_grpc_service
   tcpSvc: tb_tcp_service
   gateway: tb_gateway
-  flow: tb_flow
-  flowHour: tb_flow_hour
+  serviceHour: tb_service_hour
+  requestHour: tb_request_hour
 
 

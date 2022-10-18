@@ -33,5 +33,9 @@ func InitRedis(addr, pass string, db int) {
 	if err2 != nil {
 		panic(err2)
 	}
+	rets, _ := RedisClient.Keys("flow_*").Result()
+	for _, ret := range rets {
+		fmt.Println(ret)
+	}
 	fmt.Printf("redis client:%s\n", ret2)
 }
