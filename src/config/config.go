@@ -82,9 +82,7 @@ func InitConfigure(configureFile, logPath string) error {
 
 	gin.SetMode(All.Mode)
 	util.TranslateValidator()
-	if loggerErr := InitLogger(logPath, All.Name); loggerErr != nil {
-		panic(loggerErr)
-	}
+	InitLogger(logPath, All.Name)
 	InitMongo(All.MongoC, All.Mode)
 	InitRedis(All.Redis.Addr, All.Redis.Pass, All.Redis.Database)
 	// 初始化

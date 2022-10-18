@@ -12,7 +12,10 @@ import (
 
 var Logger *zap.Logger
 
-func InitLogger(path, name string) (e error) {
+func InitLogger(path, name string) {
+	var e error
 	Logger, e = log.InitZapLogger(path, name)
-	return
+	if e != nil {
+		panic(e)
+	}
 }

@@ -8,6 +8,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gateway_kit/config"
 	"gateway_kit/util/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
@@ -120,11 +121,11 @@ type ReqHourEntity struct {
 	DeletedAt int64               `json:"deleted_at" bson:"deleted_at" description:"deleted"` // 删除时间
 }
 
-type ReqHourDao struct {
+type RequestHourDao struct {
 	mongodb.Dao
 }
 
-func NewReqHourDao() *ReqHourDao {
+func NewRequestHourDao() *RequestHourDao {
 	indices := make(map[string]mongo.IndexModel)
 	idxSvcName := "idx_service_path_method_hour_date"
 	indexBackground := true
@@ -138,7 +139,7 @@ func NewReqHourDao() *ReqHourDao {
 			Unique:     &unique,
 		},
 	}
-	return &ReqHourDao{
+	return &RequestHourDao{
 		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
 			Table:         config.All.Tables.RequestHour,
@@ -147,7 +148,7 @@ func NewReqHourDao() *ReqHourDao {
 	}
 }
 
-func (engine *ReqHourDao) AllInMonth(ctx context.Context) (entities []*ReqHourEntity, err error) {
+func (engine *RequestHourDao) AllInMonth(ctx context.Context) (entities []*ReqHourEntity, err error) {
 	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
 	var cursor *mongo.Cursor
 	monthAgo := time.Now().AddDate(0, -1, 0)
@@ -160,7 +161,7 @@ func (engine *ReqHourDao) AllInMonth(ctx context.Context) (entities []*ReqHourEn
 	}
 }
 
-func (engine *ReqHourDao) Insert(ctx context.Context, entity *ReqHourEntity) (*ReqHourEntity, error) {
+func (engine *RequestHourDao) Insert(ctx context.Context, entity *ReqHourEntity) (*ReqHourEntity, error) {
 	entity.CreatedAt = time.Now()
 	entity.UpdatedAt = time.Now()
 	result, err := engine.Collection().InsertOne(ctx, entity)
@@ -175,7 +176,7 @@ func (engine *ReqHourDao) Insert(ctx context.Context, entity *ReqHourEntity) (*R
 	}
 }
 
-func (engine *ReqHourDao) Update(ctx context.Context, entity *ReqHourEntity) (*ReqHourEntity, error) {
+func (engine *RequestHourDao) Update(ctx context.Context, entity *ReqHourEntity) (*ReqHourEntity, error) {
 	if entity.Count == 0 {
 		return entity, nil
 	}
@@ -226,6 +227,63 @@ func (engine *ReqHourDao) Update(ctx context.Context, entity *ReqHourEntity) (*R
 	}
 }
 
+func (engine *RequestHourDao) GetServiceRequestsDetail(ctx context.Context, service string, from, end time.Time) {
+	opts := options.Find().SetSort(bson.M{"updated_at": 1})
+	cursor, err := engine.Collection().Find(ctx,
+		bson.D{
+			{"service", service},
+			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+		},
+		opts)
+
+	entities := make([]*ReqHourEntity, 0)
+	if err = cursor.All(ctx, &entities); err != nil {
+		config.Logger.Error("error of decode entities", zap.Error(err))
+	} else {
+		for _, e := range entities {
+			config.Logger.Info("entity", zap.String("name", e.Service), zap.String("uri", e.Path), zap.Int("hour", e.Hour), zap.Int64("count", e.Count))
+		}
+	}
+}
+
+func (engine *RequestHourDao) GetReqSum(ctx context.Context, service, uri, method string, from, end time.Time) {
+	opts := options.Aggregate().SetMaxTime(2 * time.Second)
+	groupStage := bson.D{
+		{"$match",
+			bson.D{
+				{"service", service},
+				{"path", uri},
+				{"method", method},
+				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+				//{"$and",
+				//	bson.D{
+				//		{"updated_at", bson.M{"$gte": from}},
+				//		{"updated_at", bson.M{"$lt": end}},
+				//	},
+				//},
+			},
+		},
+		{"$group", bson.D{
+			{"_id", bson.M{"service": "$service", "path": "$path", "method": "$method"}},
+			{"svc_sum",
+				bson.D{
+					{"$sum", "$count"},
+				}},
+		}},
+	}
+	if aggCursor, err := engine.Collection().Aggregate(ctx, mongo.Pipeline{groupStage}, opts); err != nil {
+		config.Logger.Error("aggregate error", zap.Error(err))
+	} else {
+		var results []bson.M
+		if err = aggCursor.All(ctx, &results); err != nil {
+			config.Logger.Error("aggCursor load error", zap.Error(err))
+		}
+		for _, result := range results {
+			fmt.Printf("category %v, count=%v\n", result["_id"], result["sum_count"])
+		}
+	}
+}
+
 // ServiceHourEntity 按照时间写入
 type ServiceHourEntity struct {
 	ID        *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
@@ -263,6 +321,69 @@ func NewServiceHourDao() *ServiceHourDao {
 			Table:         config.All.Tables.ServiceHour,
 			IndexParamMap: indices,
 		},
+	}
+}
+
+func (engine *ServiceHourDao) GetServicesDetail(ctx context.Context, service string, from, end time.Time) (entities []*ServiceHourEntity, err error) {
+
+	opts := options.Find().SetSort(bson.M{"updated_at": 1})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx,
+		bson.D{
+			{"category", "service"},
+			{"name", service},
+			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+			//"$and": bson.D{
+			//	{"updated_at", bson.M{"$gte": from}},
+			//	{"updated_at", bson.M{"lt": end}},
+			//},
+		},
+		opts)
+
+	//entities := make([]*ServiceHourEntity, 0)
+	if err = cursor.All(ctx, &entities); err != nil {
+		config.Logger.Error("error of decode entities", zap.Error(err))
+		return
+	} else {
+		//
+		return
+	}
+}
+
+func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) {
+	opts := options.Aggregate().SetMaxTime(2 * time.Second)
+	matchStage := bson.D{
+		{"$match",
+			bson.D{
+				{"category", "service"},
+				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+				//{"$and",
+				//	bson.D{
+				//		{"updated_at", bson.M{"$gte": from}},
+				//		{"updated_at", bson.M{"$lt": end}},
+				//	},
+				//},
+			},
+		},
+	}
+	groupStage := bson.D{
+		{"$group", bson.D{
+			{"_id", "$name"},
+			{"svc_sum", bson.D{
+				{"$sum", "$count"},
+			}},
+		}},
+	}
+	if aggCursor, err := engine.Collection().Aggregate(ctx, mongo.Pipeline{matchStage, groupStage}, opts); err != nil {
+		config.Logger.Error("aggregate error", zap.Error(err))
+	} else {
+		var results []bson.M
+		if err = aggCursor.All(ctx, &results); err != nil {
+			config.Logger.Error("aggCursor load error", zap.Error(err))
+		}
+		for _, result := range results {
+			fmt.Printf("category %v, count=%v\n", result["_id"], result["svc_sum"])
+		}
 	}
 }
 

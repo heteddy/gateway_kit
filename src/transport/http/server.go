@@ -51,6 +51,7 @@ func MakeServerHandler() *gin.Engine {
 
 	endpoint.GatewayRouteRegister(svr)
 	endpoint.HttpSvcRouteRegister(svr)
+	endpoint.HttpSvcFlowRegister(svr)
 
 	return router
 }

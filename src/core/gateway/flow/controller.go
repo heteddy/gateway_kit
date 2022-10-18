@@ -122,7 +122,7 @@ type FlowCollector struct {
 	stopC    chan struct{}
 	*util.TickerSvc
 	svcHourDao *dao.ServiceHourDao
-	reqHourDao *dao.ReqHourDao
+	reqHourDao *dao.RequestHourDao
 }
 
 func NewFlowCollector() *FlowCollector {
@@ -140,9 +140,9 @@ func NewFlowCollector() *FlowCollector {
 			svcFlows:   make(map[string]*SvcFlowCtrl),
 			storage:    storage,
 			stopC:      make(chan struct{}),
-			TickerSvc:  util.NewTickerSvc("FlowCollector", time.Second*10, false),
+			TickerSvc:  util.NewTickerSvc("FlowCollector", time.Minute*5, false),
 			svcHourDao: dao.NewServiceHourDao(),
-			reqHourDao: dao.NewReqHourDao(),
+			reqHourDao: dao.NewRequestHourDao(),
 		}
 	})
 	return flowCollector
