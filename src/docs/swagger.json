@@ -14,6 +14,83 @@
     },
     "host": "localhost:9901",
     "paths": {
+        "/gateway-kit-svr/flow-service-details/": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "统计"
+                ],
+                "summary": "列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "服务名",
+                        "name": "service",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/gateway-kit-svr/flow-services/": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "统计"
+                ],
+                "summary": "列表",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "开始时间",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "结束时间",
+                        "name": "end",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/gateway-kit-svr/gateway": {
             "get": {
                 "consumes": [

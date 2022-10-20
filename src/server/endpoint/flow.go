@@ -26,6 +26,16 @@ type FlowSvcSumReq struct {
 	End  string `json:"end" form:"end" binding:"required"`
 }
 
+// GetServicesSum godoc
+// @Summary 列表
+// @Tags 统计
+// @version 1.0
+// @Accept application/json
+// @Param from query string true "开始时间"
+// @Param end query string true "结束时间"
+// @Success 200 {object} string
+// @Failure 200 {object} string
+// @Router /gateway-kit-svr/flow-services/ [get]
 func (ctrl *FlowCtrl) GetServicesSum(c *gin.Context) {
 	response := util.NewGinResponse(c)
 	var req FlowSvcSumReq
@@ -56,6 +66,17 @@ type FlowSvcDetailReq struct {
 	End     string `json:"end" form:"end" binding:"required"`
 }
 
+// GetServiceDetail godoc
+// @Summary 列表
+// @Tags 统计
+// @version 1.0
+// @Accept application/json
+// @Param from query string true "开始时间"
+// @Param end query string true "结束时间"
+// @Param service query string true "服务名"
+// @Success 200 {object} string
+// @Failure 200 {object} string
+// @Router /gateway-kit-svr/flow-service-details/ [get]
 func (ctrl *FlowCtrl) GetServiceDetail(c *gin.Context) {
 	response := util.NewGinResponse(c)
 	var req FlowSvcDetailReq
