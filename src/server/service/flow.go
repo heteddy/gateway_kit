@@ -31,12 +31,11 @@ type FlowInfo struct {
 }
 
 func (svc *FlowService) GetServiceDetail(ctx context.Context, service string, from, end time.Time) ([]*dao.ServiceHourEntity, error) {
-	return svc.svcDao.GetServicesDetail(ctx, service, from, end)
+	return svc.svcDao.GetDetail(ctx, "service", service, from, end)
 }
 
-func (svc *FlowService) GetServicesSum(ctx context.Context, from, end time.Time) ([]*FlowInfo, error) {
-	svc.svcDao.GetSum(ctx, from, end)
-	return nil, nil
+func (svc *FlowService) GetServicesSum(ctx context.Context, from, end time.Time) ([]*dao.ServiceSumEntity, error) {
+	return svc.svcDao.GetSum(ctx, from, end)
 }
 
 func (svc *FlowService) GetGwDetail(ctx context.Context, from, end time.Time) ([]*FlowInfo, error) {

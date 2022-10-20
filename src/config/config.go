@@ -53,6 +53,7 @@ type Configure struct {
 		Gateway     string
 		ServiceHour string
 		RequestHour string
+		ServiceDay  string
 	}
 	MongoC mongodb.Config
 }

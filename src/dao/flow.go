@@ -19,95 +19,6 @@ import (
 	"time"
 )
 
-//type FlowSumDao struct {
-//	mongodb.Dao
-//}
-//
-//type FlowSumEntity struct {
-//	ID        *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-//	Category  string              `json:"category" bson:"category"` // gateway 或者 service
-//	Name      string              `json:"name" bson:"name"`         // http服务名词
-//	Count     int64               `json:"count" bson:"count"`       //
-//	CreatedAt time.Time           `json:"created_at" bson:"created_at"`
-//	UpdatedAt time.Time           `json:"updated_at" bson:"updated_at"`
-//	DeletedAt int64               `json:"deleted_at" bson:"deleted_at" description:"deleted"` // 删除时间
-//}
-//
-//func NewFlowSumDao() *FlowSumDao {
-//	indices := make(map[string]mongo.IndexModel)
-//	idxSvcName := "idx_category_name"
-//	indexBackground := true
-//	unique := true
-//
-//	indices[idxSvcName] = mongo.IndexModel{
-//		Keys: bson.D{{"name", 1}, {"category", 1}},
-//		Options: &options.IndexOptions{
-//			Name:       &idxSvcName,
-//			Background: &indexBackground,
-//			Unique:     &unique,
-//		},
-//	}
-//	return &FlowSumDao{
-//		Dao: mongodb.Dao{
-//			Client:        config.MongoEngine,
-//			Table:         config.All.Tables.Flow,
-//			IndexParamMap: indices,
-//		},
-//	}
-//}
-//
-//func (engine *FlowSumDao) Insert(ctx context.Context, entity *FlowSumEntity) (*FlowSumEntity, error) {
-//	entity.CreatedAt = time.Now()
-//	entity.UpdatedAt = time.Now()
-//	result, err := engine.Collection().InsertOne(ctx, entity)
-//	if err != nil {
-//		return entity, err
-//	} else {
-//		if objID, ok := result.InsertedID.(primitive.ObjectID); ok {
-//			entity.ID = &objID
-//			return entity, nil
-//		}
-//		return entity, errors.New("mongo _id类型转换错误")
-//	}
-//}
-//
-//func (engine *FlowSumDao) Update(ctx context.Context, entity *FlowSumEntity) (*FlowSumEntity, error) {
-//	entity.UpdatedAt = time.Now()
-//	if entity.Count == 0 {
-//		return entity, nil
-//	}
-//	//opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
-//	//var cursor *mongo.Cursor
-//	//var err error
-//	count, err := engine.Collection().CountDocuments(ctx, bson.D{{"category", entity.Category}, {"name", entity.Name}})
-//	if err != nil {
-//		return nil, err
-//	} else {
-//		if count == 0 {
-//			return engine.Insert(ctx, entity)
-//		} else {
-//			ret, err := engine.Collection().UpdateMany(ctx, bson.D{{"category", entity.Category}, {"name", entity.Name}}, bson.M{"$inc": bson.M{"count": entity.Count}})
-//			if err != nil {
-//				return nil, err
-//			} else {
-//				config.Logger.Info("update sum count", zap.Int64("modified count", ret.ModifiedCount))
-//				return entity, nil
-//			}
-//		}
-//	}
-//}
-//
-//func (engine *FlowSumDao) All(ctx context.Context) (entities []*FlowSumEntity, err error) {
-//	opt := options.Find().SetSort(bson.D{{"updated_at", -1}})
-//	var cursor *mongo.Cursor
-//	cursor, err = engine.Collection().Find(ctx, bson.M{"deleted_at": 0}, opt)
-//	if err != nil {
-//		return
-//	} else {
-//		err = cursor.All(ctx, &entities)
-//		return
-//	}
-//}
 type ReqHourEntity struct {
 	ID        *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	Service   string              `json:"service" bson:"service"`
@@ -180,6 +91,7 @@ func (engine *RequestHourDao) Update(ctx context.Context, entity *ReqHourEntity)
 	if entity.Count == 0 {
 		return entity, nil
 	}
+	// note 是否需要事务或分布式锁
 	//session, err := engine.Client.StartSession()
 	//if err != nil {
 	//	return nil, err
@@ -255,12 +167,6 @@ func (engine *RequestHourDao) GetReqSum(ctx context.Context, service, uri, metho
 				{"path", uri},
 				{"method", method},
 				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
-				//{"$and",
-				//	bson.D{
-				//		{"updated_at", bson.M{"$gte": from}},
-				//		{"updated_at", bson.M{"$lt": end}},
-				//	},
-				//},
 			},
 		},
 		{"$group", bson.D{
@@ -324,14 +230,14 @@ func NewServiceHourDao() *ServiceHourDao {
 	}
 }
 
-func (engine *ServiceHourDao) GetServicesDetail(ctx context.Context, service string, from, end time.Time) (entities []*ServiceHourEntity, err error) {
+func (engine *ServiceHourDao) GetDetail(ctx context.Context, category, name string, from, end time.Time) (entities []*ServiceHourEntity, err error) {
 
 	opts := options.Find().SetSort(bson.M{"updated_at": 1})
 	var cursor *mongo.Cursor
 	cursor, err = engine.Collection().Find(ctx,
 		bson.D{
-			{"category", "service"},
-			{"name", service},
+			{"category", category},
+			{"name", name},
 			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
 			//"$and": bson.D{
 			//	{"updated_at", bson.M{"$gte": from}},
@@ -350,7 +256,15 @@ func (engine *ServiceHourDao) GetServicesDetail(ctx context.Context, service str
 	}
 }
 
-func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) {
+type _ID struct {
+	Name string `json:"name" bson:"name"`
+}
+type ServiceSumEntity struct {
+	ID     _ID   `json:"_id" bson:"_id"`
+	SvcSum int64 `json:"svc_sum" bson:"svc_sum"`
+}
+
+func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) ([]*ServiceSumEntity, error) {
 	opts := options.Aggregate().SetMaxTime(2 * time.Second)
 	matchStage := bson.D{
 		{"$match",
@@ -368,7 +282,7 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) {
 	}
 	groupStage := bson.D{
 		{"$group", bson.D{
-			{"_id", "$name"},
+			{"_id", bson.M{"name": "$name"}},
 			{"svc_sum", bson.D{
 				{"$sum", "$count"},
 			}},
@@ -376,14 +290,20 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) {
 	}
 	if aggCursor, err := engine.Collection().Aggregate(ctx, mongo.Pipeline{matchStage, groupStage}, opts); err != nil {
 		config.Logger.Error("aggregate error", zap.Error(err))
+		return nil, err
 	} else {
-		var results []bson.M
+		//var results []bson.M
+		var results []*ServiceSumEntity
 		if err = aggCursor.All(ctx, &results); err != nil {
 			config.Logger.Error("aggCursor load error", zap.Error(err))
+			return nil, err
 		}
 		for _, result := range results {
-			fmt.Printf("category %v, count=%v\n", result["_id"], result["svc_sum"])
+			//fmt.Printf("category %v, count=%v\n", result["_id"], result[])
+			fmt.Printf("result= %v\n", result)
 		}
+
+		return results, nil
 	}
 }
 
@@ -461,6 +381,115 @@ func (engine *ServiceHourDao) Update(ctx context.Context, entity *ServiceHourEnt
 				config.Logger.Info("update sum count", zap.Int64("modified count", ret.ModifiedCount))
 				return entity, nil
 			}
+		}
+	}
+}
+
+// ServiceDayEntity 按照时间写入
+type ServiceDayEntity struct {
+	ID        *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Category  string              `json:"category" bson:"category,omitempty"` //gateway service uri
+	Name      string              `json:"name" bson:"name"`                   // http服务名词
+	Count     int64               `json:"count" bson:"count"`                 //
+	Date      string              `json:"date" bson:"date"`
+	CreatedAt time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at" bson:"updated_at"`
+	DeletedAt int64               `json:"deleted_at" bson:"deleted_at" description:"deleted"` // 删除时间
+}
+
+type ServiceDayDao struct {
+	mongodb.Dao
+}
+
+func NewServiceDayDao() *ServiceDayDao {
+	indices := make(map[string]mongo.IndexModel)
+	idxSvcName := "idx_category_name_date"
+	indexBackground := true
+	unique := true
+
+	indices[idxSvcName] = mongo.IndexModel{
+		Keys: bson.D{{"category", 1}, {"name", 1}, {"date", 1}},
+		Options: &options.IndexOptions{
+			Name:       &idxSvcName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
+	return &ServiceDayDao{
+		Dao: mongodb.Dao{
+			Client:        config.MongoEngine,
+			Table:         config.All.Tables.ServiceDay,
+			IndexParamMap: indices,
+		},
+	}
+}
+
+func (engine *ServiceDayDao) Count(ctx context.Context, category, name string, t time.Time) (int64, error) {
+	return engine.Collection().CountDocuments(ctx, bson.D{
+		{"category", category}, {"name", name}, {"created_at", bson.D{{"$gte", t}, {"$lt", t.AddDate(0, 0, 1)}}},
+	})
+}
+
+func (engine *ServiceDayDao) GetDetail(ctx context.Context, category, name string, from, end time.Time) (entities []*ServiceDayEntity, err error) {
+	opts := options.Find().SetSort(bson.M{"updated_at": 1})
+	var cursor *mongo.Cursor
+	cursor, err = engine.Collection().Find(ctx,
+		bson.D{
+			{"category", category},
+			{"name", name},
+			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+			//"$and": bson.D{
+			//	{"updated_at", bson.M{"$gte": from}},
+			//	{"updated_at", bson.M{"lt": end}},
+			//},
+		},
+		opts)
+
+	//entities := make([]*ServiceHourEntity, 0)
+	if err = cursor.All(ctx, &entities); err != nil {
+		config.Logger.Error("error of decode entities", zap.Error(err))
+		return
+	} else {
+		//
+		return
+	}
+}
+
+// GetSum  定义返回值结构
+func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, from, end time.Time) {
+	opts := options.Aggregate().SetMaxTime(2 * time.Second)
+	matchStage := bson.D{
+		{"$match",
+			bson.D{
+				{"category", category},
+				{"category", name},
+				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+				//{"$and",
+				//	bson.D{
+				//		{"updated_at", bson.M{"$gte": from}},
+				//		{"updated_at", bson.M{"$lt": end}},
+				//	},
+				//},
+			},
+		},
+	}
+	groupStage := bson.D{
+		{"$group", bson.D{
+			{"_id", "$name"},
+			{"svc_sum", bson.D{
+				{"$sum", "$count"},
+			}},
+		}},
+	}
+	if aggCursor, err := engine.Collection().Aggregate(ctx, mongo.Pipeline{matchStage, groupStage}, opts); err != nil {
+		config.Logger.Error("aggregate error", zap.Error(err))
+	} else {
+		var results []bson.M
+		if err = aggCursor.All(ctx, &results); err != nil {
+			config.Logger.Error("aggCursor load error", zap.Error(err))
+		}
+		for _, result := range results {
+			fmt.Printf("category %v, count=%v\n", result["_id"], result["svc_sum"])
 		}
 	}
 }
