@@ -118,7 +118,6 @@ loop:
 					Value: sarama.StringEncoder(s),
 				}
 			}
-
 		case <-tracker.stopC:
 			break loop
 		}
