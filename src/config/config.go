@@ -23,6 +23,12 @@ var (
 	All          Configure
 )
 
+type KafkaSinkConfig struct {
+	Broker   string `json:"broker"`
+	Topics   string `json:"topics"`
+	ClientID string `json:"client_id"`
+}
+
 type Configure struct {
 	Name    string
 	Mode    string // release debug
@@ -55,7 +61,8 @@ type Configure struct {
 		RequestHour string
 		ServiceDay  string
 	}
-	MongoC mongodb.Config
+	MongoC             mongodb.Config
+	KafkaEventProducer KafkaSinkConfig
 }
 
 func InitConfigure(configureFile, logPath string) error {

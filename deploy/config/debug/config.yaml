@@ -41,4 +41,8 @@ tables:   # 这里要创建不同的库，不能放到同一个库中
   requestHour: tb_request_hour
   serviceDay: tb_service_day
 
+kafkaEventProducer:
+  broker:
+  topics: topic_track_event
+  clientID: gw_track_event_producer
 
