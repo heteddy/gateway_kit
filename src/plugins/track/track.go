@@ -42,7 +42,7 @@ type EventTracker struct {
 	stopC  chan struct{}
 }
 
-func NewEventTracker(c *config.KafkaSinkConfig) *EventTracker {
+func NewEventTracker(c config.KafkaSinkConfig) *EventTracker {
 	teOnce.Do(func() {
 		addrs := strings.Split(c.Broker, ",")
 		conf := sarama.NewConfig()

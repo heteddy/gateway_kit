@@ -34,6 +34,10 @@ func Start() {
 	flowC := flow.NewFlowCollector()
 	flowC.Start()
 
+	// note 如果需要配置埋点在这里加上
+	//tracker := track.NewEventTracker(config.All.KafkaEventProducer)
+	//tracker.Start()
+
 	// 服务发现，目前轮训数据库
 	fmt.Printf("gateway started......\n")
 }

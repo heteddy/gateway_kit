@@ -34,10 +34,9 @@ func MakeProxyHandler() *gin.Engine {
 	admin.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "DISABLE_SWAGGER"))
 	pprof.RouteRegister(admin, "pprof")
 
-	// todo 如果改成proxy就不行，为什么呢？
 	router.Use( // 这里没有任何前缀
 		middleware.GwStripUriMiddleware(config.All.Name),
-		middleware.AccessLogMiddleware(config.Logger),
+		middleware.AccessLogMiddleware(config.Logger, "/healthz"),
 		middleware.ServiceNameMiddleware(),
 		middleware.IPFilterMiddleware(),
 		middleware.ProtocolMiddleware(),

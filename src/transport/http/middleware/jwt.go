@@ -9,14 +9,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"gateway_kit/config"
 	"gateway_kit/util"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"strings"
 )
 
 func ExtractJWTBody(raw string) (string, error) {
 	ss := strings.Split(raw, ".")
-	if len(ss) != 3 {
+	if len(ss) == 3 {
 		return ss[1], nil
 	}
 	return "", errors.New("jwt format not supported")
@@ -54,7 +56,13 @@ func JwtAuthMiddleware() gin.HandlerFunc {
 					c.Set(k, v)
 					// 检查是否为string类型
 					if k == util.JwtKeyUserID {
-						c.Request.Header.Set(k, v.(string))
+						if userid, existed := c.Request.Header[util.JwtKeyUserID]; !existed {
+							c.Request.Header.Set(k, v.(string))
+						} else {
+							config.Logger.Info("userid has existed", zap.Strings(k, userid))
+							c.Request.Header.Add(k, v.(string))
+						}
+
 					}
 
 				}
