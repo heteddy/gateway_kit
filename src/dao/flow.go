@@ -50,6 +50,15 @@ func NewRequestHourDao() *RequestHourDao {
 			Unique:     &unique,
 		},
 	}
+	idxTTLName := "idx_ttl_created_at"
+	indices[idxTTLName] = mongo.IndexModel{
+		Keys: bson.D{{"created_at", 1}, {"expireAfterSeconds", 7776000}}, //90*24*60*60
+		Options: &options.IndexOptions{
+			Name:       &idxTTLName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
 	return &RequestHourDao{
 		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
@@ -139,7 +148,7 @@ func (engine *RequestHourDao) Update(ctx context.Context, entity *ReqHourEntity)
 	}
 }
 
-func (engine *RequestHourDao) GetServiceRequestsDetail(ctx context.Context, service string, from, end time.Time) {
+func (engine *RequestHourDao) GetServiceRequestsDetail(ctx context.Context, service string, from, end time.Time) ([]*ReqHourEntity, error) {
 	opts := options.Find().SetSort(bson.M{"updated_at": 1})
 	cursor, err := engine.Collection().Find(ctx,
 		bson.D{
@@ -151,11 +160,13 @@ func (engine *RequestHourDao) GetServiceRequestsDetail(ctx context.Context, serv
 	entities := make([]*ReqHourEntity, 0)
 	if err = cursor.All(ctx, &entities); err != nil {
 		config.Logger.Error("error of decode entities", zap.Error(err))
+		return nil, err
 	} else {
 		for _, e := range entities {
 			config.Logger.Info("entity", zap.String("name", e.Service), zap.String("uri", e.Path), zap.Int("hour", e.Hour), zap.Int64("count", e.Count))
 		}
 	}
+	return entities, nil
 }
 
 func (engine *RequestHourDao) GetReqSum(ctx context.Context, service, uri, method string, from, end time.Time) {
@@ -221,6 +232,15 @@ func NewServiceHourDao() *ServiceHourDao {
 			Unique:     &unique,
 		},
 	}
+	idxTTLName := "idx_ttl_created_at"
+	indices[idxTTLName] = mongo.IndexModel{
+		Keys: bson.D{{"created_at", 1}, {"expireAfterSeconds", 7776000}}, //90*24*60*60
+		Options: &options.IndexOptions{
+			Name:       &idxTTLName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
 	return &ServiceHourDao{
 		Dao: mongodb.Dao{
 			Client:        config.MongoEngine,
@@ -257,7 +277,8 @@ func (engine *ServiceHourDao) GetDetail(ctx context.Context, category, name stri
 }
 
 type _ID struct {
-	Name string `json:"name" bson:"name"`
+	Category string `json:"category" bson:"category"`
+	Name     string `json:"name" bson:"name"`
 }
 type ServiceSumEntity struct {
 	ID     _ID   `json:"_id" bson:"_id"`
@@ -269,7 +290,7 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) (
 	matchStage := bson.D{
 		{"$match",
 			bson.D{
-				{"category", "service"},
+				//{"category", "service"},
 				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
 				//{"$and",
 				//	bson.D{
@@ -282,7 +303,7 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) (
 	}
 	groupStage := bson.D{
 		{"$group", bson.D{
-			{"_id", bson.M{"name": "$name"}},
+			{"_id", bson.M{"category": "$category", "name": "$name"}},
 			{"svc_sum", bson.D{
 				{"$sum", "$count"},
 			}},
@@ -423,6 +444,17 @@ func NewServiceDayDao() *ServiceDayDao {
 		},
 	}
 }
+func (engine *ServiceDayDao) InsertMany(ctx context.Context, entities []*ServiceDayEntity) error {
+	inserts := make([]interface{}, 0, len(entities))
+	for _, e := range entities {
+		e.CreatedAt = time.Now()
+		e.UpdatedAt = time.Now()
+		inserts = append(inserts, e)
+	}
+
+	_, err := engine.Collection().InsertMany(ctx, inserts)
+	return err
+}
 
 func (engine *ServiceDayDao) Count(ctx context.Context, category, name string, t time.Time) (int64, error) {
 	return engine.Collection().CountDocuments(ctx, bson.D{
@@ -433,16 +465,17 @@ func (engine *ServiceDayDao) Count(ctx context.Context, category, name string, t
 func (engine *ServiceDayDao) GetDetail(ctx context.Context, category, name string, from, end time.Time) (entities []*ServiceDayEntity, err error) {
 	opts := options.Find().SetSort(bson.M{"updated_at": 1})
 	var cursor *mongo.Cursor
+	var matchStage bson.D
+	if category != "" {
+		matchStage = append(matchStage, bson.E{"category", category})
+	}
+	if name != "" {
+		matchStage = append(matchStage, bson.E{"name", name})
+	}
+	matchStage = append(matchStage, bson.E{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}})
+
 	cursor, err = engine.Collection().Find(ctx,
-		bson.D{
-			{"category", category},
-			{"name", name},
-			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
-			//"$and": bson.D{
-			//	{"updated_at", bson.M{"$gte": from}},
-			//	{"updated_at", bson.M{"lt": end}},
-			//},
-		},
+		matchStage,
 		opts)
 
 	//entities := make([]*ServiceHourEntity, 0)
@@ -456,23 +489,31 @@ func (engine *ServiceDayDao) GetDetail(ctx context.Context, category, name strin
 }
 
 // GetSum  定义返回值结构
-func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, from, end time.Time) {
+func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, from, end time.Time) ([]*ServiceSumEntity, error) {
 	opts := options.Aggregate().SetMaxTime(2 * time.Second)
-	matchStage := bson.D{
-		{"$match",
-			bson.D{
-				{"category", category},
-				{"category", name},
-				{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
-				//{"$and",
-				//	bson.D{
-				//		{"updated_at", bson.M{"$gte": from}},
-				//		{"updated_at", bson.M{"$lt": end}},
-				//	},
-				//},
-			},
-		},
+	var matchStage bson.D
+	//matchStage := bson.D{
+	//	{"$match",
+	//		bson.D{
+	//			{"category", category},
+	//			{"category", name},
+	//			{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}},
+	//			//{"$and",
+	//			//	bson.D{
+	//			//		{"updated_at", bson.M{"$gte": from}},
+	//			//		{"updated_at", bson.M{"$lt": end}},
+	//			//	},
+	//			//},
+	//		},
+	//	},
+	//}
+	if category != "" {
+		matchStage = append(matchStage, bson.E{"category", category})
 	}
+	if name != "" {
+		matchStage = append(matchStage, bson.E{"name", name})
+	}
+	matchStage = append(matchStage, bson.E{"updated_at", bson.D{{"$gte", from}, {"$lt", end}}})
 	groupStage := bson.D{
 		{"$group", bson.D{
 			{"_id", "$name"},
@@ -483,13 +524,86 @@ func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, 
 	}
 	if aggCursor, err := engine.Collection().Aggregate(ctx, mongo.Pipeline{matchStage, groupStage}, opts); err != nil {
 		config.Logger.Error("aggregate error", zap.Error(err))
+		return nil, err
 	} else {
-		var results []bson.M
+		var results []*ServiceSumEntity
 		if err = aggCursor.All(ctx, &results); err != nil {
 			config.Logger.Error("aggCursor load error", zap.Error(err))
+			return nil, err
 		}
 		for _, result := range results {
-			fmt.Printf("category %v, count=%v\n", result["_id"], result["svc_sum"])
+			//fmt.Printf("category %v, count=%v\n", result["_id"], result[])
+			fmt.Printf("result= %v\n", result)
 		}
+
+		return results, nil
 	}
+}
+
+type FlowSummaryTask struct {
+	ID        *primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Date      string              `json:"date" bson:"date"`
+	Status    string              `json:"status" bson:"status"`
+	CreatedAt time.Time           `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at" bson:"updated_at"`
+	DeletedAt int64               `json:"deleted_at" bson:"deleted_at" description:"deleted"` // 删除时间
+}
+
+type ServiceSummaryTaskDao struct {
+	mongodb.Dao
+}
+
+func NewServiceSummaryDao() *ServiceSummaryTaskDao {
+	indices := make(map[string]mongo.IndexModel)
+	idxSvcName := "idx_date"
+	indexBackground := true
+	unique := true
+
+	indices[idxSvcName] = mongo.IndexModel{
+		Keys: bson.D{{"date", 1}},
+		Options: &options.IndexOptions{
+			Name:       &idxSvcName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
+	idxTTLName := "idx_ttl_created_at"
+	indices[idxTTLName] = mongo.IndexModel{
+		Keys: bson.D{{"created_at", 1}, {"expireAfterSeconds", 7776000}}, //90*24*60*60
+		Options: &options.IndexOptions{
+			Name:       &idxTTLName,
+			Background: &indexBackground,
+			Unique:     &unique,
+		},
+	}
+	return &ServiceSummaryTaskDao{
+		Dao: mongodb.Dao{
+			Client:        config.MongoEngine,
+			Table:         config.All.Tables.SummaryTask,
+			IndexParamMap: indices,
+		},
+	}
+}
+
+func (engine *ServiceSummaryTaskDao) Existed(ctx context.Context, date string) (bool, error) {
+	count, err := engine.Collection().CountDocuments(ctx, bson.D{{"date", date}})
+	return count > 0, err
+}
+
+func (engine *ServiceSummaryTaskDao) Start(ctx context.Context, date string) (*FlowSummaryTask, error) {
+	t := FlowSummaryTask{
+		Date:   date,
+		Status: "running",
+	}
+	ret, err := engine.Collection().InsertOne(ctx, &t)
+	if objID, ok := ret.InsertedID.(primitive.ObjectID); ok {
+		t.ID = &objID
+		return &t, nil
+	}
+	return &t, err
+}
+
+func (engine *ServiceSummaryTaskDao) Complete(ctx context.Context, date string) error {
+	ret := engine.Collection().FindOneAndUpdate(ctx, bson.D{{"date", date}, {"status", "running"}}, bson.M{"$set": bson.M{"status": "complete"}})
+	return ret.Err()
 }

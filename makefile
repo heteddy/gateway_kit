@@ -27,6 +27,10 @@ build:
 mod:
 	@cd ./src && go mod tidy
 
+clean:
+	-rm ./deploy/${SVR_BIN}
+	-rm ./src/cmd/proxy/${SVR_BIN}
+	-rm ./src/cmd/proxy/main
 
 docker-build:
 	@docker build -t ${SVR_IMAGE} --build-arg BINARY_NAME=${SVR_BIN} --build-arg MODE=${MODE}

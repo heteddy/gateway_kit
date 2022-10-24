@@ -102,6 +102,57 @@ info:
   title: api-gateway 接口
   version: "0.1"
 paths:
+  /gateway-kit-svr/flow-gateway/:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 开始时间
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: 结束时间
+        in: query
+        name: end
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - 统计
+  /gateway-kit-svr/flow-gw-details/:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: 开始时间
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: 结束时间
+        in: query
+        name: end
+        required: true
+        type: string
+      - description: 服务名
+        in: query
+        name: service
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: 列表
+      tags:
+      - 统计
   /gateway-kit-svr/flow-service-details/:
     get:
       consumes:

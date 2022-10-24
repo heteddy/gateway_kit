@@ -121,6 +121,7 @@ type FlowCollector struct {
 	storage  *FlowStorage
 	stopC    chan struct{}
 	*util.TickerSvc
+	sumTask    *SumTask
 	svcHourDao *dao.ServiceHourDao
 	reqHourDao *dao.RequestHourDao
 }
@@ -141,6 +142,7 @@ func NewFlowCollector() *FlowCollector {
 			storage:    storage,
 			stopC:      make(chan struct{}),
 			TickerSvc:  util.NewTickerSvc("FlowCollector", time.Minute*5, false),
+			sumTask:    NewSumTask(),
 			svcHourDao: dao.NewServiceHourDao(),
 			reqHourDao: dao.NewRequestHourDao(),
 		}
@@ -167,11 +169,13 @@ func (collector *FlowCollector) Call(svc, uri, method string) {
 
 func (collector *FlowCollector) Stop() {
 	collector.TickerSvc.Stop()
+	collector.sumTask.Stop()
 	close(collector.stopC)
 	close(collector.storage.storageChan)
 }
 func (collector *FlowCollector) Start() {
 	collector.storage.Start()
+	collector.sumTask.Start()
 	collector.TickerSvc.Start(collector.endpoint())
 }
 
@@ -243,5 +247,74 @@ func (collector *FlowCollector) endpoint() util.SvcEndpoint {
 			close(reqC)
 		}
 		collector.mutex.Unlock()
+	}
+}
+
+type SumTask struct {
+	summaryDao *dao.ServiceSummaryTaskDao
+	svcHourDao *dao.ServiceHourDao
+	svcDayDao  *dao.ServiceDayDao
+	stopC      chan struct{}
+	*util.TickerSvc
+}
+
+func NewSumTask() *SumTask {
+	return &SumTask{
+		summaryDao: dao.NewServiceSummaryDao(),
+		svcHourDao: dao.NewServiceHourDao(),
+		svcDayDao:  dao.NewServiceDayDao(),
+		//stopC:      make(chan struct{}),
+		TickerSvc: util.NewTickerSvc("flow_day_sum_task", time.Hour*6, false),
+	}
+}
+
+func (task *SumTask) Start() {
+	task.TickerSvc.Start(task.endpoint())
+}
+
+func (task *SumTask) Stop() {
+	task.TickerSvc.Stop()
+	//close(stopC)
+}
+
+func (task *SumTask) endpoint() util.SvcEndpoint {
+	return func() {
+		lastDay := time.Now().AddDate(0, 0, -1)
+		ds := lastDay.Format("2006-01-02")
+		if ok, err := task.summaryDao.Existed(context.Background(), ds); err != nil {
+
+		} else {
+			if ok {
+				return
+			}
+		}
+		// 执行
+		if _, err2 := task.summaryDao.Start(context.Background(), ds); err2 != nil {
+			return
+		} else {
+			_lastDay0, err := time.Parse("2006-01-02", ds)
+			today0, err2 := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
+			if err != nil && err2 != nil {
+				if entities, err3 := task.svcHourDao.GetSum(context.Background(), _lastDay0, today0); err3 != nil {
+					_dayEntities := make([]*dao.ServiceDayEntity, 0, len(entities))
+					for _, e := range entities {
+						_dayEntities = append(_dayEntities, &dao.ServiceDayEntity{
+							Category: e.ID.Category,
+							Name:     e.ID.Name,
+							Count:    e.SvcSum,
+							Date:     ds,
+						})
+					}
+					if err4 := task.svcDayDao.InsertMany(context.Background(), _dayEntities); err4 != nil {
+						// todo add log
+					}
+				}
+
+			}
+			if e := task.summaryDao.Complete(context.Background(), ds); e != nil {
+
+			}
+		}
+
 	}
 }

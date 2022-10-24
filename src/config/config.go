@@ -60,6 +60,7 @@ type Configure struct {
 		ServiceHour string
 		RequestHour string
 		ServiceDay  string
+		SummaryTask string
 	}
 	MongoC             mongodb.Config
 	KafkaEventProducer KafkaSinkConfig

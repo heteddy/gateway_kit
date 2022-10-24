@@ -40,6 +40,7 @@ tables:   # 这里要创建不同的库，不能放到同一个库中
   serviceHour: tb_service_hour
   requestHour: tb_request_hour
   serviceDay: tb_service_day
+  summaryTask: tb_service_summary_task
 
 kafkaEventProducer:
   broker:
