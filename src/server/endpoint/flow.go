@@ -73,7 +73,7 @@ func (ctrl *FlowCtrl) GetGwSum(c *gin.Context) {
 // @Accept application/json
 // @Param from query string true "开始时间"
 // @Param end query string true "结束时间"
-// @Param service query string true "服务名"
+// @Param name query string true "服务名"
 // @Success 200 {object} string
 // @Failure 200 {object} string
 // @Router /gateway-kit-svr/flow-gw-details/ [get]
@@ -155,7 +155,7 @@ type FlowDetailReq struct {
 // @Accept application/json
 // @Param from query string true "开始时间"
 // @Param end query string true "结束时间"
-// @Param service query string true "服务名"
+// @Param name query string true "服务名"
 // @Success 200 {object} string
 // @Failure 200 {object} string
 // @Router /gateway-kit-svr/flow-service-details/ [get]

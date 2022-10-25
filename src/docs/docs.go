@@ -91,7 +91,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "服务名",
-                        "name": "service",
+                        "name": "name",
                         "in": "query",
                         "required": true
                     }
@@ -133,7 +133,7 @@ var doc = `{
                     {
                         "type": "string",
                         "description": "服务名",
-                        "name": "service",
+                        "name": "name",
                         "in": "query",
                         "required": true
                     }
