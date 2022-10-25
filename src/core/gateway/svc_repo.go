@@ -31,6 +31,7 @@ type HttpServiceRepo struct { //支持watch？
 	svcMatcherChan chan<- *SvcMatchRule
 	rateChan       chan<- *RateLimitConfigEvent
 	protoChan      chan<- *ProtocolSupportedEvt
+	rewriteChan    chan<- *SvcRewriteRule
 	stopC          chan struct{}
 
 	//entities   []*dao.HttpSvcEntity
@@ -42,7 +43,8 @@ func NewServiceRepo(
 	accessC chan<- *AccessConfigEvt,
 	matcherC chan<- *SvcMatchRule,
 	rateC chan<- *RateLimitConfigEvent,
-	protoC chan<- *ProtocolSupportedEvt) *HttpServiceRepo {
+	protoC chan<- *ProtocolSupportedEvt,
+	rewriteC chan<- *SvcRewriteRule) *HttpServiceRepo {
 	onceRepo.Do(func() {
 		RepoHttp = &HttpServiceRepo{
 			svcChan:        make(chan *dao.SvcEvent),
@@ -51,6 +53,7 @@ func NewServiceRepo(
 			svcMatcherChan: matcherC,
 			rateChan:       rateC,
 			protoChan:      protoC,
+			rewriteChan:    rewriteC,
 			stopC:          make(chan struct{}),
 		}
 	})
@@ -103,6 +106,12 @@ loop:
 				Svc:         entity.Name,
 				IsWebsocket: entity.IsWebsocket,
 				IsHttps:     entity.IsHttps,
+			}
+			repo.rewriteChan <- &SvcRewriteRule{
+				EventType:   event.EventType,
+				Svc:         entity.Name,
+				RewriteUrls: entity.UrlRewrite,
+				Patterns:    make([]rewritePattern, 0, len(entity.UrlRewrite)),
 			}
 
 		}

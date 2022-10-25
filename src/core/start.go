@@ -24,7 +24,9 @@ func Start() {
 	rate.Start()
 	proto := gateway.NewProtocolTransCtrl()
 	proto.Start()
-	repo := gateway.NewServiceRepo(bm.In(), ac.In(), matcher.In(), rate.In(), proto.In()) // 接收服务配置信息
+	rewriter := gateway.NewRewriter()
+	rewriter.Start()
+	repo := gateway.NewServiceRepo(bm.In(), ac.In(), matcher.In(), rate.In(), proto.In(), rewriter.In()) // 接收服务配置信息
 	repo.Start()
 	gw := gateway.NewGwController(ac.In()) // 接收gateway配置信息
 	gw.Start()

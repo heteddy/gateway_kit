@@ -42,6 +42,7 @@ func MakeProxyHandler() *gin.Engine {
 		middleware.ProtocolMiddleware(),
 		middleware.ContextTimeout(time.Millisecond*time.Duration(config.All.Gateway.Timeout)),
 		middleware.RateLimitMiddleware(float64(config.All.RateLimit.Limit), config.All.RateLimit.Burst),
+		middleware.RewriteUriMiddleware(),
 		middleware.FlowMiddleware(),
 		middleware.ReverseProxyMiddleware(lb.NewLBManager()),
 	)

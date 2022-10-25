@@ -54,9 +54,6 @@ func (builder *ProxyBuilder) BuildDirector(balancer lb.LoadBalancer, svcName, sc
 		} else {
 			req.Header.Add("User-Agent", "teddy-api-gateway")
 		}
-		for k, v := range req.Header {
-			log.Printf("k=%s,v=%s\n", k, v)
-		}
 	}
 }
 
