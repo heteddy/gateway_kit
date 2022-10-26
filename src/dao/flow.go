@@ -153,7 +153,12 @@ func (engine *RequestHourDao) GetServiceRequestsDetail(ctx context.Context, serv
 	cursor, err := engine.Collection().Find(ctx,
 		bson.D{
 			{"service", service},
-			{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}},
+			{"updated_at",
+				bson.D{
+					{"$gte", time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, time.UTC)},
+					{"$lt", time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)},
+				},
+			},
 		},
 		opts)
 
@@ -177,7 +182,12 @@ func (engine *RequestHourDao) GetReqSum(ctx context.Context, service, uri, metho
 				{"service", service},
 				{"path", uri},
 				{"method", method},
-				{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}},
+				{"updated_at",
+					bson.D{
+						{"$gte", time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, time.UTC)},
+						{"$lt", time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)},
+					},
+				},
 			},
 		},
 		{"$group", bson.D{
@@ -258,7 +268,12 @@ func (engine *ServiceHourDao) GetDetail(ctx context.Context, category, name stri
 		bson.D{
 			{"category", category},
 			{"name", name},
-			{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}},
+			{"date",
+				bson.D{
+					{"$gte", from.Format("2006-01-02")},
+					{"$lt", end.Format("2006-01-02")},
+				},
+			},
 			//"$and": bson.D{
 			//	{"updated_at", bson.M{"$gte": from}},
 			//	{"updated_at", bson.M{"lt": end}},
@@ -291,7 +306,12 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) (
 		{"$match",
 			bson.D{
 				//{"category", "service"},
-				{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}},
+				{"date",
+					bson.D{
+						{"$gte", from.Format("2006-01-02")},
+						{"$lt", end.Format("2006-01-02")},
+					},
+				},
 				//{"$and",
 				//	bson.D{
 				//		{"updated_at", bson.M{"$gte": from}},
@@ -303,7 +323,7 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) (
 	}
 	groupStage := bson.D{
 		{"$group", bson.D{
-			{"_id", bson.M{"category": "$category", "name": "$name"}},
+			{"_id", bson.M{"category": "$category", "name": "$name", "date": "$date"}},
 			{"svc_sum", bson.D{
 				{"$sum", "$count"},
 			}},
@@ -457,13 +477,19 @@ func (engine *ServiceDayDao) InsertMany(ctx context.Context, entities []*Service
 }
 
 func (engine *ServiceDayDao) Count(ctx context.Context, category, name string, t time.Time) (int64, error) {
-	return engine.Collection().CountDocuments(ctx, bson.D{
-		{"category", category}, {"name", name}, {"created_at",
-			bson.D{
-				{"$gte", t.Format("2006-01-02")},
-				{"$lt", t.AddDate(0, 0, 1).Format("2006-01-02")},
-			}},
-	})
+	today := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+	tomorrow := today.AddDate(0, 0, 1)
+	return engine.Collection().CountDocuments(ctx,
+		bson.D{
+			{"category", category}, {"name", name},
+			{"created_at",
+				bson.D{
+					{"$gte", today},
+					{"$lt", tomorrow},
+					//{"$gte", time.Date(from.Year(), from.Month(), from.Day(), 0, 0, 0, 0, time.UTC)},
+					//{"$lt", time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, time.UTC)},
+				}},
+		})
 }
 
 func (engine *ServiceDayDao) GetDetail(ctx context.Context, category, name string, from, end time.Time) (entities []*ServiceDayEntity, err error) {
@@ -476,7 +502,13 @@ func (engine *ServiceDayDao) GetDetail(ctx context.Context, category, name strin
 	if name != "" {
 		matchItems = append(matchItems, bson.E{"name", name})
 	}
-	matchItems = append(matchItems, bson.E{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}})
+	matchItems = append(matchItems, bson.E{"date",
+		bson.D{
+			{"$gte", from.Format("2006-01-02")},
+			{"$lt", end.Format("2006-01-02")},
+		},
+	},
+	)
 
 	cursor, err = engine.Collection().Find(ctx,
 		matchItems,
@@ -518,7 +550,12 @@ func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, 
 	if name != "" {
 		matchItems = append(matchItems, bson.E{"name", name})
 	}
-	matchItems = append(matchItems, bson.E{"updated_at", bson.D{{"$gte", from.Format("2006-01-02")}, {"$lt", end.Format("2006-01-02")}}})
+	matchItems = append(matchItems, bson.E{"date",
+		bson.D{
+			{"$gte", from.Format("2006-01-02")},
+			{"$lt", end.Format("2006-01-02")},
+		},
+	})
 	matchStage := bson.D{
 		{"$match", matchItems},
 	}

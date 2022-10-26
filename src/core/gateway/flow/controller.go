@@ -282,9 +282,10 @@ func (task *SumTask) endpoint() util.SvcEndpoint {
 		lastDay := time.Now().AddDate(0, 0, -1)
 		ds := lastDay.Format("2006-01-02")
 		if ok, err := task.summaryDao.Existed(context.Background(), ds); err != nil {
-
+			config.Logger.Error("get sum task exist error", zap.Error(err))
 		} else {
 			if ok {
+				config.Logger.Info("already existed", zap.String("today-ds", ds))
 				return
 			}
 		}
@@ -294,8 +295,11 @@ func (task *SumTask) endpoint() util.SvcEndpoint {
 		} else {
 			_lastDay0, err := time.Parse("2006-01-02", ds)
 			today0, err2 := time.Parse("2006-01-02", time.Now().Format("2006-01-02"))
-			if err != nil && err2 != nil {
+			if err == nil && err2 == nil {
 				if entities, err3 := task.svcHourDao.GetSum(context.Background(), _lastDay0, today0); err3 != nil {
+					config.Logger.Error("get hour sum error", zap.Error(err3))
+					return
+				} else {
 					_dayEntities := make([]*dao.ServiceDayEntity, 0, len(entities))
 					for _, e := range entities {
 						_dayEntities = append(_dayEntities, &dao.ServiceDayEntity{
@@ -307,6 +311,8 @@ func (task *SumTask) endpoint() util.SvcEndpoint {
 					}
 					if err4 := task.svcDayDao.InsertMany(context.Background(), _dayEntities); err4 != nil {
 						// todo add log
+						config.Logger.Error("insert day sum error", zap.Error(err4))
+						return
 					}
 				}
 
