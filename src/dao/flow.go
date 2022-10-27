@@ -192,7 +192,7 @@ func (engine *RequestHourDao) GetReqSum(ctx context.Context, service, uri, metho
 		},
 		{"$group", bson.D{
 			{"_id", bson.M{"service": "$service", "path": "$path", "method": "$method"}},
-			{"svc_sum",
+			{"count",
 				bson.D{
 					{"$sum", "$count"},
 				}},
@@ -294,10 +294,11 @@ func (engine *ServiceHourDao) GetDetail(ctx context.Context, category, name stri
 type _ID struct {
 	Category string `json:"category" bson:"category"`
 	Name     string `json:"name" bson:"name"`
+	Date     string `json:"date" bson:"date"`
 }
 type ServiceSumEntity struct {
-	ID     _ID   `json:"_id" bson:"_id"`
-	SvcSum int64 `json:"svc_sum" bson:"svc_sum"`
+	ID    _ID   `json:"_id" bson:"_id"`
+	Count int64 `json:"count" bson:"count"`
 }
 
 func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) ([]*ServiceSumEntity, error) {
@@ -324,7 +325,7 @@ func (engine *ServiceHourDao) GetSum(ctx context.Context, from, end time.Time) (
 	groupStage := bson.D{
 		{"$group", bson.D{
 			{"_id", bson.M{"category": "$category", "name": "$name", "date": "$date"}},
-			{"svc_sum", bson.D{
+			{"count", bson.D{
 				{"$sum", "$count"},
 			}},
 		}},
@@ -550,19 +551,20 @@ func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, 
 	if name != "" {
 		matchItems = append(matchItems, bson.E{"name", name})
 	}
-	matchItems = append(matchItems, bson.E{"date",
-		bson.D{
-			{"$gte", from.Format("2006-01-02")},
-			{"$lt", end.Format("2006-01-02")},
-		},
-	})
+	matchItems = append(matchItems,
+		bson.E{"date",
+			bson.D{
+				{"$gte", from.Format("2006-01-02")},
+				{"$lt", end.Format("2006-01-02")},
+			},
+		})
 	matchStage := bson.D{
 		{"$match", matchItems},
 	}
 	groupStage := bson.D{
 		{"$group", bson.D{
-			{"_id", bson.M{"name": "$name"}},
-			{"svc_sum", bson.D{
+			{"_id", bson.M{"category": "$category", "name": "$name", "date": "$date"}},
+			{"count", bson.D{
 				{"$sum", "$count"},
 			}},
 		}},

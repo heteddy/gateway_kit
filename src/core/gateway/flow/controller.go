@@ -305,7 +305,7 @@ func (task *SumTask) endpoint() util.SvcEndpoint {
 						_dayEntities = append(_dayEntities, &dao.ServiceDayEntity{
 							Category: e.ID.Category,
 							Name:     e.ID.Name,
-							Count:    e.SvcSum,
+							Count:    e.Count,
 							Date:     ds,
 						})
 					}
