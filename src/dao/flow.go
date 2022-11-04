@@ -563,7 +563,7 @@ func (engine *ServiceDayDao) GetSum(ctx context.Context, category, name string, 
 	}
 	groupStage := bson.D{
 		{"$group", bson.D{
-			{"_id", bson.M{"category": "$category", "name": "$name", "date": "$date"}},
+			{"_id", bson.M{"category": "$category", "name": "$name"}},
 			{"count", bson.D{
 				{"$sum", "$count"},
 			}},
