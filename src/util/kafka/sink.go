@@ -1,6 +1,7 @@
 package kafka
 
 import (
+	"fmt"
 	"github.com/Shopify/sarama"
 	"log"
 	//"github.com/reugn/go-streams/flow"
@@ -67,28 +68,37 @@ func NewKafkaSink(addrs []string, config *sarama.Config, topic string) *KafkaSin
 	return sink
 }
 
+func (ks *KafkaSink) send(msg interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Printf("error of send to kafka; detail=%v", err)
+		}
+	}()
+	switch m := msg.(type) {
+	case *sarama.ProducerMessage:
+		ks.producer.SendMessage(m)
+	case *sarama.ConsumerMessage:
+		sMsg := &sarama.ProducerMessage{
+			Topic: ks.topic,
+			Key:   sarama.StringEncoder(m.Key),
+			Value: sarama.StringEncoder(m.Value),
+		}
+		ks.producer.SendMessage(sMsg)
+	case string:
+		sMsg := &sarama.ProducerMessage{
+			Topic: ks.topic,
+			Value: sarama.StringEncoder(m),
+		}
+		ks.producer.SendMessage(sMsg)
+	default:
+		log.Printf("Unsupported message type %v\n", m)
+	}
+}
+
 // init starts the main loop
 func (ks *KafkaSink) init() {
 	for msg := range ks.in {
-		switch m := msg.(type) {
-		case *sarama.ProducerMessage:
-			ks.producer.SendMessage(m)
-		case *sarama.ConsumerMessage:
-			sMsg := &sarama.ProducerMessage{
-				Topic: ks.topic,
-				Key:   sarama.StringEncoder(m.Key),
-				Value: sarama.StringEncoder(m.Value),
-			}
-			ks.producer.SendMessage(sMsg)
-		case string:
-			sMsg := &sarama.ProducerMessage{
-				Topic: ks.topic,
-				Value: sarama.StringEncoder(m),
-			}
-			ks.producer.SendMessage(sMsg)
-		default:
-			log.Printf("Unsupported message type %v\n", m)
-		}
+		ks.send(msg)
 	}
 	log.Printf("Closing the Kafka producer\n")
 	ks.producer.Close()
