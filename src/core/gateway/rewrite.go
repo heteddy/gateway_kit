@@ -26,6 +26,7 @@ type rewritePattern struct {
 type SvcRewriteRule struct {
 	Svc         string
 	EventType   int
+	MatchRule   string
 	RewriteUrls []string
 	Patterns    []rewritePattern
 }
@@ -46,6 +47,9 @@ func (r *SvcRewriteRule) genPattern() error {
 	}
 
 	return nil
+}
+func (r SvcRewriteRule) Match(svc string) bool {
+	return r.Svc == svc
 }
 
 func (r SvcRewriteRule) Is(other *SvcRewriteRule) bool {
@@ -87,11 +91,13 @@ func NewRewriter() *SvcRewriter {
 	return svcRewriter
 }
 
-func (rewriter *SvcRewriter) Rewrite(path string) (string, error) {
+func (rewriter *SvcRewriter) Rewrite(svc, path string) (string, error) {
 	rewriter.mutex.RLock()
 	defer rewriter.mutex.RUnlock()
 	for _, r := range rewriter.svcRules {
-		return r.Rewrite(path)
+		if r.Match(svc) {
+			return r.Rewrite(path)
+		}
 	}
 	return "", errors.New("service not found")
 }

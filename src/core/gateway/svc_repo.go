@@ -110,6 +110,7 @@ loop:
 			repo.rewriteChan <- &SvcRewriteRule{
 				EventType:   event.EventType,
 				Svc:         entity.Name,
+				MatchRule:   entity.MatchRule,
 				RewriteUrls: entity.UrlRewrite,
 				Patterns:    make([]rewritePattern, 0, len(entity.UrlRewrite)),
 			}

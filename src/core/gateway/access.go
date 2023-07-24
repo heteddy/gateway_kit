@@ -127,5 +127,5 @@ func (ac *AccessController) Allow(svc, ip string) bool {
 	if _block.Has(ip) {
 		return true
 	}
-	return true
+	return false
 }

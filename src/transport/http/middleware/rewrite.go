@@ -10,6 +10,7 @@ import (
 	"gateway_kit/core/gateway"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 /*
@@ -22,12 +23,19 @@ rewrite 是在服务器的角度 /resource 重写到 /different-resource 时，�
 func RewriteUriMiddleware() gin.HandlerFunc {
 	rewriter := gateway.NewRewriter()
 	return func(c *gin.Context) {
-		newPath, err := rewriter.Rewrite(c.Request.URL.Path)
-		if err != nil {
-			config.Logger.Error("rewrite failure:", zap.Error(err))
+		if svc, existed := c.Get(KeyGwSvcName); existed {
+			svcName := svc.(string)
+			newPath, err := rewriter.Rewrite(svcName, c.Request.URL.Path)
+			if err != nil {
+				config.Logger.Error("rewrite failure:", zap.Error(err))
+			} else {
+				c.Request.URL.Path = newPath
+			}
+			c.Next()
 		} else {
-			c.Request.URL.Path = newPath
+			c.JSON(http.StatusNotFound, "no service found")
+			c.Abort()
 		}
-		c.Next()
+
 	}
 }

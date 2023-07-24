@@ -13,12 +13,13 @@ func (ss IPSlice) Has(s string) bool {
 	for _, _s := range ss {
 		if strings.Contains(_s, "*") { //正则匹配
 			sList := strings.Split(_s, "*")
-			if len(sList) > 0 {
+			if len(sList) > 0 && strings.HasPrefix(s, sList[0]) {
 				return strings.HasPrefix(s, sList[0])
 			}
-		}
-		if _s == s {
-			return true
+		} else {
+			if _s == s {
+				return true
+			}
 		}
 	}
 	return false
