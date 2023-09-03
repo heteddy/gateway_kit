@@ -8,11 +8,13 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"gateway_kit/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.uber.org/zap"
 	"log"
 	"time"
 )
@@ -78,14 +80,56 @@ type Dao struct {
 	Client        *Client
 	Table         string
 	IndexParamMap map[string]mongo.IndexModel
+	toDelIndex    []string
 }
 
-func (m Dao) Collection() *mongo.Collection {
-	return m.Client.Collection(m.Table)
+func (d Dao) Collection() *mongo.Collection {
+	return d.Client.Collection(d.Table)
 }
 
-func (m Dao) CreateIndex(model mongo.IndexModel) {
-	indexView := m.Collection().Indexes()
+func (d Dao) CreateIndexes() {
+	c, err := d.Collection().Indexes().List(context.Background())
+	if err != nil {
+		config.Logger.Error("err of list index", zap.Error(err))
+	} else {
+		var indexes []bson.M
+		if err := c.All(context.Background(), &indexes); err != nil {
+			config.Logger.Error("err of all index", zap.Error(err))
+		} else {
+			istatus := make(map[string]bool, len(d.IndexParamMap))
+			for idx, index := range indexes {
+				for k, v := range index {
+					if k == "name" {
+						idxName, ok := v.(string)
+						if !ok {
+							continue
+						}
+						istatus[idxName] = true
+						config.Logger.Info("已存在 index", zap.Int("idx", idx), zap.String("name", idxName))
+					}
+
+				}
+			}
+			for _, name := range d.toDelIndex {
+				indexView := d.Collection().Indexes()
+				_, err := indexView.DropOne(context.Background(), name)
+				if err != nil {
+					config.Logger.Error("err of del index", zap.Error(err), zap.String("name", name))
+				} else {
+					config.Logger.Info("success of del index", zap.String("name", name))
+				}
+			}
+			for k, _ := range d.IndexParamMap {
+				if _, exists := istatus[k]; !exists {
+					d.CreateIndex(d.IndexParamMap[k])
+				}
+			}
+		}
+	}
+}
+
+func (d Dao) CreateIndex(model mongo.IndexModel) {
+	indexView := d.Collection().Indexes()
 	index, err := indexView.CreateOne(context.Background(), model)
 	if err != nil {
 		log.Fatalf("index create failure, err =%v\n", err)
@@ -95,24 +139,24 @@ func (m Dao) CreateIndex(model mongo.IndexModel) {
 	}
 }
 
-func (m Dao) Delete(ctx context.Context, _id string) error {
+func (d Dao) Delete(ctx context.Context, _id string) error {
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return err
 	} else {
-		if _, err2 := m.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
+		if _, err2 := d.Collection().DeleteOne(ctx, bson.M{"_id": objID}); err2 != nil {
 			return err2
 		}
 		return nil
 	}
 }
 
-func (m Dao) SoftDelete(ctx context.Context, _id string) error {
+func (d Dao) SoftDelete(ctx context.Context, _id string) error {
 	if objID, err := primitive.ObjectIDFromHex(_id); err != nil {
 		return err
 	} else {
 		now := time.Now()
 		updatedAt := now.Unix()
-		ret, err := m.Collection().UpdateByID(ctx, objID, bson.M{"$set": bson.M{"deleted_at": updatedAt, "updated_at": now}},
+		ret, err := d.Collection().UpdateByID(ctx, objID, bson.M{"$set": bson.M{"deleted_at": updatedAt, "updated_at": now}},
 			options.Update().SetUpsert(false))
 		if err != nil {
 			return err
