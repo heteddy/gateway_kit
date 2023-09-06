@@ -8,13 +8,11 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"gateway_kit/config"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.uber.org/zap"
 	"log"
 	"time"
 )
@@ -90,13 +88,13 @@ func (d Dao) Collection() *mongo.Collection {
 func (d Dao) CreateIndexes() {
 	c, err := d.Collection().Indexes().List(context.Background())
 	if err != nil {
-		config.Logger.Error("err of list index", zap.Error(err))
+		fmt.Println("err of list index", err)
 	} else {
 		var indexes []bson.M
 		if err := c.All(context.Background(), &indexes); err != nil {
-			config.Logger.Error("err of all index", zap.Error(err))
+			fmt.Println("err of all index", err)
 		} else {
-			istatus := make(map[string]bool, len(d.IndexParamMap))
+			iStatus := make(map[string]bool, len(d.IndexParamMap))
 			for idx, index := range indexes {
 				for k, v := range index {
 					if k == "name" {
@@ -104,8 +102,8 @@ func (d Dao) CreateIndexes() {
 						if !ok {
 							continue
 						}
-						istatus[idxName] = true
-						config.Logger.Info("已存在 index", zap.Int("idx", idx), zap.String("name", idxName))
+						iStatus[idxName] = true
+						fmt.Println("已存在 index", idx, idxName)
 					}
 
 				}
@@ -114,13 +112,11 @@ func (d Dao) CreateIndexes() {
 				indexView := d.Collection().Indexes()
 				_, err := indexView.DropOne(context.Background(), name)
 				if err != nil {
-					config.Logger.Error("err of del index", zap.Error(err), zap.String("name", name))
-				} else {
-					config.Logger.Info("success of del index", zap.String("name", name))
+					fmt.Println("err of del index", err, name)
 				}
 			}
 			for k, _ := range d.IndexParamMap {
-				if _, exists := istatus[k]; !exists {
+				if _, exists := iStatus[k]; !exists {
 					d.CreateIndex(d.IndexParamMap[k])
 				}
 			}

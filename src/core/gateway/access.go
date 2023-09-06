@@ -111,20 +111,18 @@ func (ac *AccessController) Allow(svc, ip string) bool {
 	ac.mutex.RLock()
 	defer ac.mutex.RUnlock()
 
-	_block := util.IPSlice(ac.gwBlockIP)
-	if _block.Has(ip) {
+	_gwBlock := util.IPSlice(ac.gwBlockIP)
+	if _gwBlock.Has(ip) {
 		return false
 	}
-	_block = ac.gwAllowIP
-	if _block.Has(ip) {
-		return true
-	}
-	_block = ac.svcBlockIP[svc]
-	if _block.Has(ip) {
+	_svcBlock := util.IPSlice(ac.svcBlockIP[svc])
+	if _svcBlock.Has(ip) {
 		return false
 	}
-	_block = ac.svcAllowIP[svc]
-	if _block.Has(ip) {
+
+	_gwAllow := util.IPSlice(ac.gwAllowIP)
+	_svcAllow := util.IPSlice(ac.svcAllowIP[svc])
+	if _gwAllow.Has(ip) && _svcAllow.Has(ip) {
 		return true
 	}
 	return false
